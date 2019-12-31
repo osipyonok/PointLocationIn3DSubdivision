@@ -1,0 +1,3 @@
+[submodule "ThirdParty/Klein"]
+	path = ThirdParty/Klein
+	url = https://github.com/unclejimbo/Klein.git

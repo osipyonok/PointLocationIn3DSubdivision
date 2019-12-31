@@ -1,0 +1,345 @@
+From a877ee97e1e0909bd51940c61a2b718771d5bda1 Mon Sep 17 00:00:00 2001
+From: Max Osipyonok <perepishka@mail.ru>
+Date: Tue, 31 Dec 2019 20:11:32 +0200
+Subject: [PATCH 3/3] Moved shaders to qt resources Small changes in cmake
+
+---
+ Klein.qrc                              |  23 ++++++
+ include/Klein/Render/ResourceManager.h | 104 ++++---------------------
+ src/CMakeLists.txt                     |   6 +-
+ src/Gui/ImGuiManager.cpp               |   2 +-
+ src/Render/ResourceManager.cpp         |  91 ++++++++++++++++++++++
+ 5 files changed, 135 insertions(+), 91 deletions(-)
+ create mode 100644 Klein.qrc
+ create mode 100644 src/Render/ResourceManager.cpp
+
+diff --git a/Klein.qrc b/Klein.qrc
+new file mode 100644
+index 0000000..a5de7dc
+--- /dev/null
++++ b/Klein.qrc
+@@ -0,0 +1,23 @@
++<!DOCTYPE RCC><RCC version="1.0">
++<qresource>
++    <file>data/font/FiraMono-Bold.ttf</file>
++    <file>data/shader/Depth.frag</file>
++    <file>data/shader/Depth.vert</file>
++    <file>data/shader/Light.inc.frag</file>
++    <file>data/shader/NoProj.vert</file>
++    <file>data/shader/PBR.frag</file>
++    <file>data/shader/PBR.inc.frag</file>
++    <file>data/shader/PBRSolidWireframe.frag</file>
++    <file>data/shader/Shading.vert</file>
++    <file>data/shader/ShadingInstanced.vert</file>
++    <file>data/shader/ShadingSolidWireframe.geom</file>
++    <file>data/shader/ShadingSolidWireframe.vert</file>
++    <file>data/shader/SolidWireframe.inc.frag</file>
++    <file>data/shader/SolidWireframe.inc.geom</file>
++    <file>data/shader/Transform.inc.vert</file>
++    <file>data/shader/Unlit.frag</file>
++    <file>data/shader/UnlitSolidWireframe.frag</file>
++    <file>data/shader/WBOITComposition.frag</file>
++    <file>data/shader/WBOITTransparent.frag</file>
++</qresource>
++</RCC>
+\ No newline at end of file
+diff --git a/include/Klein/Render/ResourceManager.h b/include/Klein/Render/ResourceManager.h
+index eddaa71..89d275a 100644
+--- a/include/Klein/Render/ResourceManager.h
++++ b/include/Klein/Render/ResourceManager.h
+@@ -28,11 +28,7 @@ enum BuiltinResource : int
+ class KLEIN_API ResourceManager
+ {
+ public:
+-    static ResourceManager& instance()
+-    {
+-        static ResourceManager m;
+-        return m;
+-    }
++    static ResourceManager& instance();
+ 
+ public:
+     ResourceManager(const ResourceManager&) = delete;
+@@ -45,7 +41,9 @@ public:
+     T* get(BuiltinResource bs);
+ 
+ private:
+-    ResourceManager() {}
++    ResourceManager();
++
++	Qt3DRender::QShaderProgram* getShaderImpl(BuiltinResource bs);
+ 
+ private:
+     Qt3DCore::QEntity* m_root;
+@@ -57,29 +55,29 @@ inline KLEIN_API ResourceManager& gResourceManager()
+     return ResourceManager::instance();
+ }
+ 
+-static inline Qt3DRender::QShaderProgram* createShader(const QString& fvert,
+-                                                       const QString& ffrag)
++static inline Qt3DRender::QShaderProgram* createShader(const QUrl& fvert,
++                                                       const QUrl& ffrag)
+ 
+ {
+     auto shader = new Qt3DRender::QShaderProgram();
+     shader->setVertexShaderCode(
+-        Qt3DRender::QShaderProgram::loadSource(QUrl::fromLocalFile(fvert)));
++        Qt3DRender::QShaderProgram::loadSource(fvert));
+     shader->setFragmentShaderCode(
+-        Qt3DRender::QShaderProgram::loadSource(QUrl::fromLocalFile(ffrag)));
++        Qt3DRender::QShaderProgram::loadSource(ffrag));
+     return shader;
+ }
+ 
+-static inline Qt3DRender::QShaderProgram* createShader(const QString& fvert,
+-                                                       const QString& fgeom,
+-                                                       const QString& ffrag)
++static inline Qt3DRender::QShaderProgram* createShader(const QUrl& fvert,
++                                                       const QUrl& fgeom,
++                                                       const QUrl& ffrag)
+ {
+     auto shader = new Qt3DRender::QShaderProgram();
+     shader->setVertexShaderCode(
+-        Qt3DRender::QShaderProgram::loadSource(QUrl::fromLocalFile(fvert)));
++        Qt3DRender::QShaderProgram::loadSource(fvert));
+     shader->setGeometryShaderCode(
+-        Qt3DRender::QShaderProgram::loadSource(QUrl::fromLocalFile(fgeom)));
++        Qt3DRender::QShaderProgram::loadSource(fgeom));
+     shader->setFragmentShaderCode(
+-        Qt3DRender::QShaderProgram::loadSource(QUrl::fromLocalFile(ffrag)));
++        Qt3DRender::QShaderProgram::loadSource(ffrag));
+     return shader;
+ }
+ 
+@@ -87,79 +85,7 @@ template<>
+ inline Qt3DRender::QShaderProgram*
+ ResourceManager::get<Qt3DRender::QShaderProgram>(BuiltinResource bs)
+ {
+-    Qt3DRender::QShaderProgram* shader = nullptr;
+-    if (!m_builtins.contains(bs)) {
+-        QString shaderPath("data/shader/");
+-        switch (bs) {
+-        case BUILTIN_SHADER_UNLIT:
+-            shader = createShader(shaderPath + QStringLiteral("Shading.vert"),
+-                                  shaderPath + QStringLiteral("Unlit.frag"));
+-            shader->setParent(m_root);
+-            m_builtins[bs] = shader;
+-            break;
+-        case BUILTIN_SHADER_UNLIT_SOLIDWIREFRAME:
+-            shader = createShader(
+-                shaderPath + QStringLiteral("ShadingSolidWireframe.vert"),
+-                shaderPath + QStringLiteral("ShadingSolidWireframe.geom"),
+-                shaderPath + QStringLiteral("UnlitSolidWireframe.frag"));
+-            shader->setParent(m_root);
+-            m_builtins[bs] = shader;
+-            break;
+-        case BUILTIN_SHADER_UNLIT_INSTANCED:
+-            shader = createShader(shaderPath +
+-                                      QStringLiteral("ShadingInstanced.vert"),
+-                                  shaderPath + QStringLiteral("Unlit.frag"));
+-            shader->setParent(m_root);
+-            m_builtins[bs] = shader;
+-            break;
+-        case BUILTIN_SHADER_PBR:
+-            shader = createShader(shaderPath + QStringLiteral("Shading.vert"),
+-                                  shaderPath + QStringLiteral("PBR.frag"));
+-            shader->setParent(m_root);
+-            m_builtins[bs] = shader;
+-            break;
+-        case BUILTIN_SHADER_PBR_SOLIDWIREFRAME:
+-            shader = createShader(
+-                shaderPath + QStringLiteral("ShadingSolidWireframe.vert"),
+-                shaderPath + QStringLiteral("ShadingSolidWireframe.geom"),
+-                shaderPath + QStringLiteral("PBRSolidWireframe.frag"));
+-            shader->setParent(m_root);
+-            m_builtins[bs] = shader;
+-            break;
+-        case BUILTIN_SHADER_PBR_INSTANCED:
+-            shader = createShader(shaderPath +
+-                                      QStringLiteral("ShadingInstanced.vert"),
+-                                  shaderPath + QStringLiteral("PBR.frag"));
+-            shader->setParent(m_root);
+-            m_builtins[bs] = shader;
+-            break;
+-        case BUILTIN_SHADER_DEPTH:
+-            shader = createShader(shaderPath + QStringLiteral("Depth.vert"),
+-                                  shaderPath + QStringLiteral("Depth.frag"));
+-            shader->setParent(m_root);
+-            m_builtins[bs] = shader;
+-            break;
+-        case BUILTIN_SHADER_WBOIT_TRANSPARENT:
+-            shader = createShader(shaderPath + QStringLiteral("Shading.vert"),
+-                                  shaderPath +
+-                                      QStringLiteral("WBOITTransparent.frag"));
+-            shader->setParent(m_root);
+-            m_builtins[bs] = shader;
+-            break;
+-        case BUILTIN_SHADER_WBOIT_COMPOSITION:
+-            shader = createShader(shaderPath + QStringLiteral("NoProj.vert"),
+-                                  shaderPath +
+-                                      QStringLiteral("WBOITComposition.frag"));
+-            shader->setParent(m_root);
+-            m_builtins[bs] = shader;
+-            break;
+-        default: break;
+-        }
+-    }
+-    else {
+-        shader = dynamic_cast<Qt3DRender::QShaderProgram*>(m_builtins[bs]);
+-    }
+-    return shader;
++    return getShaderImpl(bs);
+ }
+ 
+ } // namespace Klein
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 6ab97ef..9cbba3f 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -1,5 +1,6 @@
+ set(CMAKE_INCLUDE_CURRENT_DIR ON)
+ set(CMAKE_AUTOMOC ON)
++set(CMAKE_AUTORCC ON)
+ 
+ find_package(Qt5 REQUIRED COMPONENTS Core Widgets 3DCore 3DLogic 3DRender 3DExtras)
+ 
+@@ -46,6 +47,7 @@ add_library(Klein SHARED
+     ${CMAKE_CURRENT_SOURCE_DIR}/Render/PBRMaterial.cpp
+     ${CMAKE_CURRENT_SOURCE_DIR}/Render/PBRInstancedMaterial.cpp
+     ${CMAKE_CURRENT_SOURCE_DIR}/Render/PBRSolidWireframeMaterial.cpp
++    ${CMAKE_CURRENT_SOURCE_DIR}/Render/ResourceManager.cpp
+     ${CMAKE_CURRENT_SOURCE_DIR}/Render/UnlitMaterial.cpp
+     ${CMAKE_CURRENT_SOURCE_DIR}/Render/UnlitInstancedMaterial.cpp
+     ${CMAKE_CURRENT_SOURCE_DIR}/Render/UnlitSolidWireframeMaterial.cpp
+@@ -56,6 +58,8 @@ add_library(Klein SHARED
+     ${PROJECT_SOURCE_DIR}/external/imgui/src/imgui_draw.cpp
+     ${PROJECT_SOURCE_DIR}/external/imgui/src/imgui_widgets.cpp
+     ${PROJECT_SOURCE_DIR}/external/imgui/src/imgui.cpp
++
++	${PROJECT_SOURCE_DIR}/Klein.qrc
+ )
+ add_library(Klein::Klein ALIAS Klein)
+ 
+@@ -88,7 +92,7 @@ target_link_libraries(Klein
+ set_target_properties(Klein PROPERTIES
+     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
++ #   RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+ )
+ 
+ include(GNUInstallDirs)
+diff --git a/src/Gui/ImGuiManager.cpp b/src/Gui/ImGuiManager.cpp
+index 3df32ba..643d2cd 100644
+--- a/src/Gui/ImGuiManager.cpp
++++ b/src/Gui/ImGuiManager.cpp
+@@ -232,7 +232,7 @@ void ImGuiManager::initialize(Qt3DCore::QEntity* rootEntity,
+     ImGuiIO& io = ImGui::GetIO();
+     unsigned char* pixels;
+     int w, h;
+-    auto file = fontFile ? fontFile : "data/font/FiraMono-Bold.ttf";
++    auto file = fontFile ? fontFile : "qrc:/data/font/FiraMono-Bold.ttf";
+     io.Fonts->AddFontFromFileTTF(file, fontSize);
+     io.Fonts->GetTexDataAsRGBA32(&pixels, &w, &h);
+ 
+diff --git a/src/Render/ResourceManager.cpp b/src/Render/ResourceManager.cpp
+new file mode 100644
+index 0000000..7b277f7
+--- /dev/null
++++ b/src/Render/ResourceManager.cpp
+@@ -0,0 +1,91 @@
++#include "Klein/Render/ResourceManager.h"
++
++#include <QtCore>
++
++Klein::ResourceManager& Klein::ResourceManager::instance()
++{
++    static Klein::ResourceManager m;
++    return m;
++}
++
++Klein::ResourceManager::ResourceManager()
++{
++    Q_INIT_RESOURCE(Klein);
++}
++
++Qt3DRender::QShaderProgram* Klein::ResourceManager::getShaderImpl(BuiltinResource bs)
++{
++    Qt3DRender::QShaderProgram* shader = nullptr;
++    if (!m_builtins.contains(bs)) {
++        QString shaderPath("qrc:/data/shader/");
++        switch (bs) {
++        case BUILTIN_SHADER_UNLIT:
++            shader = createShader(shaderPath + QStringLiteral("Shading.vert"),
++                                  shaderPath + QStringLiteral("Unlit.frag"));
++            shader->setParent(m_root);
++            m_builtins[bs] = shader;
++            break;
++        case BUILTIN_SHADER_UNLIT_SOLIDWIREFRAME:
++            shader = createShader(
++                shaderPath + QStringLiteral("ShadingSolidWireframe.vert"),
++                shaderPath + QStringLiteral("ShadingSolidWireframe.geom"),
++                shaderPath + QStringLiteral("UnlitSolidWireframe.frag"));
++            shader->setParent(m_root);
++            m_builtins[bs] = shader;
++            break;
++        case BUILTIN_SHADER_UNLIT_INSTANCED:
++            shader = createShader(shaderPath +
++                                      QStringLiteral("ShadingInstanced.vert"),
++                                  shaderPath + QStringLiteral("Unlit.frag"));
++            shader->setParent(m_root);
++            m_builtins[bs] = shader;
++            break;
++        case BUILTIN_SHADER_PBR:
++            shader = createShader(shaderPath + QStringLiteral("Shading.vert"),
++                                  shaderPath + QStringLiteral("PBR.frag"));
++            shader->setParent(m_root);
++            m_builtins[bs] = shader;
++            break;
++        case BUILTIN_SHADER_PBR_SOLIDWIREFRAME:
++            shader = createShader(
++                shaderPath + QStringLiteral("ShadingSolidWireframe.vert"),
++                shaderPath + QStringLiteral("ShadingSolidWireframe.geom"),
++                shaderPath + QStringLiteral("PBRSolidWireframe.frag"));
++            shader->setParent(m_root);
++            m_builtins[bs] = shader;
++            break;
++        case BUILTIN_SHADER_PBR_INSTANCED:
++            shader = createShader(shaderPath +
++                                      QStringLiteral("ShadingInstanced.vert"),
++                                  shaderPath + QStringLiteral("PBR.frag"));
++            shader->setParent(m_root);
++            m_builtins[bs] = shader;
++            break;
++        case BUILTIN_SHADER_DEPTH:
++            shader = createShader(shaderPath + QStringLiteral("Depth.vert"),
++                                  shaderPath + QStringLiteral("Depth.frag"));
++            shader->setParent(m_root);
++            m_builtins[bs] = shader;
++            break;
++        case BUILTIN_SHADER_WBOIT_TRANSPARENT:
++            shader = createShader(shaderPath + QStringLiteral("Shading.vert"),
++                                  shaderPath +
++                                      QStringLiteral("WBOITTransparent.frag"));
++            shader->setParent(m_root);
++            m_builtins[bs] = shader;
++            break;
++        case BUILTIN_SHADER_WBOIT_COMPOSITION:
++            shader = createShader(shaderPath + QStringLiteral("NoProj.vert"),
++                                  shaderPath +
++                                      QStringLiteral("WBOITComposition.frag"));
++            shader->setParent(m_root);
++            m_builtins[bs] = shader;
++            break;
++        default: break;
++        }
++    }
++    else {
++        shader = dynamic_cast<Qt3DRender::QShaderProgram*>(m_builtins[bs]);
++    }
++    return shader;
++}
+\ No newline at end of file
+-- 
+2.23.0.windows.1
+

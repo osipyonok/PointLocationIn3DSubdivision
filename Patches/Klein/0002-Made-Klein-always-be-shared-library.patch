@@ -1,0 +1,33 @@
+From d8072f527d4adfb67d400732f80a99377bfa9af0 Mon Sep 17 00:00:00 2001
+From: Max Osipyonok <perepishka@mail.ru>
+Date: Tue, 31 Dec 2019 18:11:26 +0200
+Subject: [PATCH 2/3] Made Klein always be shared library
+
+---
+ src/CMakeLists.txt | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 44a6b46..6ab97ef 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -3,7 +3,7 @@ set(CMAKE_AUTOMOC ON)
+ 
+ find_package(Qt5 REQUIRED COMPONENTS Core Widgets 3DCore 3DLogic 3DRender 3DExtras)
+ 
+-add_library(Klein
++add_library(Klein SHARED
+     # add headers for automoc to work
+     ${PROJECT_SOURCE_DIR}/include/Klein/Gui/AbstractQt3DWindow.h
+     ${PROJECT_SOURCE_DIR}/include/Klein/Gui/ImGuiManager.h
+@@ -59,7 +59,6 @@ add_library(Klein
+ )
+ add_library(Klein::Klein ALIAS Klein)
+ 
+-option(BUILD_SHARED_LIBS "Build shared library" ON)
+ include(GenerateExportHeader)
+ generate_export_header(Klein
+     EXPORT_MACRO_NAME KLEIN_API
+-- 
+2.23.0.windows.1
+
