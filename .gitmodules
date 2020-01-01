@@ -1,3 +1,4 @@
 [submodule "ThirdParty/Klein"]
-	path = ThirdParty/Klein
-	url = https://github.com/unclejimbo/Klein.git
+    path = ThirdParty/Klein
+    url = https://github.com/unclejimbo/Klein.git
+    ignore = all
