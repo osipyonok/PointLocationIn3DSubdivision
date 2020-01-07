@@ -2,6 +2,8 @@
 
 #include <Math.Core/API.h>
 
+#include <QObject>
+
 #include <memory>
 
 class Face;
@@ -9,13 +11,17 @@ class Mesh;
 class Point3D;
 class Vector3D;
 
-class MATH_CORE_LIB_EXPORT Triangle final
+class MATH_CORE_API Triangle final : public QObject
 {
+	Q_OBJECT
+
 public:
 	Triangle(Point3D* ip_point1, Point3D* ip_point2, Point3D* ip_point3, 
 			 Triangle* ip_tr1 = nullptr, Triangle* ip_tr2 = nullptr, Triangle* ip_tr3 = nullptr, Mesh* ip_owner = nullptr);
 	
-	~Triangle();
+    Triangle(Triangle&& i_triangle);
+
+	~Triangle() override;
 
 	Point3D* GetPoint(short i_index) const;
 	

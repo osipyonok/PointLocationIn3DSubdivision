@@ -5,8 +5,10 @@
 #include <Math.Core/Point3D.h>
 
 
-class MATH_CORE_LIB_EXPORT Vector3D : public Point3D
+class MATH_CORE_API Vector3D : public Point3D
 {
+	Q_OBJECT
+
 public:
 	Vector3D();
 	explicit Vector3D(const Point3D& i_point);
@@ -42,6 +44,6 @@ public:
 	Vector3D& operator+=(const Vector3D& i_vector);
 	Vector3D& operator-=(const Vector3D& i_vector);
 
-	MATH_CORE_LIB_EXPORT friend Vector3D operator+(const Vector3D& i_vec1, const Vector3D& i_vec2);
-	MATH_CORE_LIB_EXPORT friend Vector3D operator-(const Vector3D& i_vec1, const Vector3D& i_vec2);
+	MATH_CORE_API friend Vector3D operator+(const Vector3D& i_vec1, const Vector3D& i_vec2);
+	MATH_CORE_API friend Vector3D operator-(const Vector3D& i_vec1, const Vector3D& i_vec2);
 };

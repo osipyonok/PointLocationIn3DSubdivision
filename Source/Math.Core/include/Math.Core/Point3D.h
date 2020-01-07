@@ -2,16 +2,20 @@
 
 #include <Math.Core/API.h>
 
+#include <QObject>
+
 #include <vector>
 
 class Point3D;
 class Triangle;
 
-MATH_CORE_LIB_EXPORT bool ComparePointsXYZ(const Point3D& i_pt1, const Point3D& i_pt2);
-MATH_CORE_LIB_EXPORT bool ComparePointsZYX(const Point3D& i_pt1, const Point3D& i_pt2);
+MATH_CORE_API bool ComparePointsXYZ(const Point3D& i_pt1, const Point3D& i_pt2);
+MATH_CORE_API bool ComparePointsZYX(const Point3D& i_pt1, const Point3D& i_pt2);
 
-class MATH_CORE_LIB_EXPORT Point3D
+class MATH_CORE_API Point3D : public QObject
 {
+	Q_OBJECT
+
 public:
 	Point3D();
 	explicit Point3D(double* i_coordinates);
@@ -19,7 +23,7 @@ public:
 
 	explicit Point3D(const Point3D& i_other);
 
-	virtual ~Point3D();
+	virtual ~Point3D() override;
 
 	double  Get(short i_index) const;
 	double& Get(short i_index);
@@ -43,9 +47,9 @@ public:
 	void RemoveTriangle(Triangle* ip_triangle);
 	const std::vector<Triangle*>& GetTriangles() const;
 
-	MATH_CORE_LIB_EXPORT friend bool operator<(const Point3D& i_pt1, const Point3D& i_pt2);
-	MATH_CORE_LIB_EXPORT friend bool operator>(const Point3D& i_pt1, const Point3D& i_pt2);
-	MATH_CORE_LIB_EXPORT friend bool operator==(const Point3D& i_pt1, const Point3D& i_pt2);
+	MATH_CORE_API friend bool operator<(const Point3D& i_pt1, const Point3D& i_pt2);
+	MATH_CORE_API friend bool operator>(const Point3D& i_pt1, const Point3D& i_pt2);
+	MATH_CORE_API friend bool operator==(const Point3D& i_pt1, const Point3D& i_pt2);
 
 private:
 	double m_coordinates[3];

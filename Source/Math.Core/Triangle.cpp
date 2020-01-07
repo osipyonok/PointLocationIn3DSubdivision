@@ -37,6 +37,14 @@ Triangle::Triangle(Point3D* ip_point1, Point3D* ip_point2, Point3D* ip_point3,
 	SetOwner(ip_owner);
 }
 
+Triangle::Triangle(Triangle&& i_triangle)
+{
+    std::swap(mp_owner, i_triangle.mp_owner);
+    std::swap(mp_face, i_triangle.mp_face);
+    std::swap(m_points, i_triangle.m_points);
+    std::swap(m_neighbors, i_triangle.m_neighbors);
+}
+
 Triangle::~Triangle()
 {
 	m_points[0]->RemoveTriangle(this);

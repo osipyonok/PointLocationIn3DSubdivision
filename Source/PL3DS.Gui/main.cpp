@@ -4,6 +4,11 @@
 #include <Math.Core/Triangle.h>
 #include <Math.Core/Vector3D.h>
 #include <Math.Core/Plane.h>
+#include <Math.Core/Mesh.h>
+
+#include <Rendering.Core/RenderableMesh.h>
+
+#include <Rendering.Main/RenderablesController.h>
 
 #include <QApplication>
 #include <QWidget>
@@ -13,8 +18,7 @@
 
 int main(int argc, char* argv[])
 {
-	//QGuiApplication app(argc, argv);
-	QApplication app(argc, argv);
+    QApplication app(argc, argv);
 
 
 	/*          2
@@ -24,39 +28,34 @@ int main(int argc, char* argv[])
 			 0/___\ 1
 	*/
 
-	Point3D p0(0, 0, 0);
-	Point3D p1(5, 0, 0);
-	Point3D p2(0, 0, 1);
-	Point3D p3(0, 1, 0);
+    Mesh mesh;
+    auto p_p0 = mesh.AddPoint({ 0, 0, 0 });
+    auto p_p1 = mesh.AddPoint({ 1, 0, 0 });
+    auto p_p2 = mesh.AddPoint({ 0, 0, 1 });
+    auto p_p3 = mesh.AddPoint({ 0, 1, 0 });
 
-	Triangle tr1(&p0, &p1, &p2); // front
-	Triangle tr2(&p0, &p2, &p3); // left
-	Triangle tr3(&p3, &p2, &p1); // right
-	Triangle tr4(&p3, &p1, &p0); // bottom
+    mesh.AddTriangle(*p_p0, *p_p1, *p_p2);// front
+    mesh.AddTriangle(*p_p3, *p_p2, *p_p0);// left
+    mesh.AddTriangle(*p_p1, *p_p2, *p_p3);// right
+    mesh.AddTriangle(*p_p0, *p_p1, *p_p3);// bottom
 
-	std::vector<Triangle*> trs = { &tr3, &tr4, &tr1, &tr2 };
+    auto p_window = new UI::MainWindow3D;
+    std::unique_ptr<QWidget> p_widget(QWidget::createWindowContainer(p_window));
+    p_widget->show();
 
-	auto p_window = new UI::MainWindow3D;
-	std::unique_ptr<QWidget> p_widget(QWidget::createWindowContainer(p_window));
-	p_widget->show();
-	//UI::MainWindow3D w;
-	//w.showMaximized();
+    auto p_renderable_mesh = std::make_unique<Rendering::RenderableMesh>(mesh);
+    p_renderable_mesh->SetRenderingStyle(Rendering::RenderableMesh::RenderingStyle::Transparent);
+    p_renderable_mesh->SetColor(QColor("teal"));
+    Rendering::RenderablesController::GetInstance().AddRenderable(*p_renderable_mesh);
 
+    Rendering::RenderableMesh renderable_mesh2(mesh);
+    renderable_mesh2.SetRenderingStyle(Rendering::RenderableMesh::RenderingStyle::Opaque);
+    renderable_mesh2.SetColor(QColor("grey"));
+    Rendering::RenderablesController::GetInstance().AddRenderable(renderable_mesh2);
+    TransformMatrix transform;
+    transform.Translate({ -1, 0, -1 });
+    transform.Scale(0.5);
+    renderable_mesh2.SetTransformMatrix(transform);
 
 	return app.exec();
 }
-
-/*
-int main(int argc, char** argv)
-{
-	std::cout << "Hello, master!\n";
-
-	auto plane1 = Plane({ 1, 1, 1 }, { 1, 1, 1 });
-	auto plane2 = Plane({ std::acos(-1), std::acos(-1), -3.283185307179586 }, { -17.8, -17.8, -17.8 });
-
-	bool b1 = plane1 == plane2;
-	bool b2 = plane2 == plane1;
-
-	return 0;
-}
-*/

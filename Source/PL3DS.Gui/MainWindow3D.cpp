@@ -1,5 +1,9 @@
 #include "MainWindow3D.h"
 
+#include <Rendering.Core/IRenderable.h>
+
+#include <Rendering.Main/RenderablesController.h>
+
 #include <Klein/Input/TrackballCameraController.h>
 #include <Klein/Render/UnlitMaterial.h>
 #include <Klein/Render/WBOITMaterial.h>
@@ -23,20 +27,61 @@
 #include <QPointer>
 #include <QVector3D>
 
+#include <Qt3DCore/QAspectEngine>
+#include <Qt3DInput/QInputSettings>
+
+#include <QCoreApplication>
+#include <QString>
+
+#include <unordered_map>
+
+namespace
+{
+    const auto _property_mesh = "PROPERTY_MAIN_WINDOW_MESH";
+
+    struct RenderableData
+    {
+        QPointer<Qt3DCore::QComponent> mp_material;
+        QPointer<Qt3DCore::QComponent> mp_transformation;
+        QPointer<Qt3DCore::QComponent> mp_renderer;
+        
+        QPointer<Qt3DCore::QEntity> mp_mesh;
+    };
+}
+
 namespace UI
 {
 	struct MainWindow3D::Impl
 	{
-		QPointer<Qt3DRender::QCamera> mp_camera;
+		QPointer<Qt3DRender::QCamera>              mp_camera;
 		QPointer<Klein::TrackballCameraController> mp_camera_controller;
-		QPointer<Klein::WBOITCompositor> mp_compositor;
+		QPointer<Klein::WBOITCompositor>           mp_compositor;
+
+        mutable std::unordered_map<const Rendering::IRenderable*, RenderableData> m_renderables_cache;
 	};
 
 	MainWindow3D::MainWindow3D(QWindow* ip_parent /*= nullptr*/)
 		: Klein::AbstractQt3DWindow(ip_parent)
 		, mp_impl(std::make_unique<Impl>())
 	{
+        using Rendering::RenderablesController;
+        auto p_controller = &RenderablesController::GetInstance();
+        bool is_connected = connect(p_controller, &RenderablesController::RenderableAdded, this, &MainWindow3D::_OnRenderableAdded);
+        Q_ASSERT(is_connected);
 
+        is_connected = connect(p_controller, &RenderablesController::RenderableRemoved, this, &MainWindow3D::_OnRenderableRemoved);
+        Q_ASSERT(is_connected);
+
+        is_connected = connect(p_controller, &RenderablesController::RenderableMaterialChanged, this, &MainWindow3D::_OnRenderableMaterialChanged);
+        Q_ASSERT(is_connected);
+
+        is_connected = connect(p_controller, &RenderablesController::RenderableRendererChanged, this, &MainWindow3D::_OnRenderableRendererChanged);
+        Q_ASSERT(is_connected);
+
+        is_connected = connect(p_controller, &RenderablesController::RenderableTransformationChanged, this, &MainWindow3D::_OnRenderableTransformationChanged);
+        Q_ASSERT(is_connected);
+
+        Q_UNUSED(is_connected);
 	}
 
 	MainWindow3D::~MainWindow3D() = default;
@@ -53,14 +98,18 @@ namespace UI
 			mp_impl->mp_compositor->setSize(size());
 	}
 
-	Qt3DCore::QEntity * MainWindow3D::createSceneGraph()
+	Qt3DCore::QEntity* MainWindow3D::createSceneGraph()
 	{
 		auto rootEntity = new Qt3DCore::QEntity;
 
-		auto meshRenderer = new Qt3DRender::QMesh(rootEntity);
+        _CreateMeshes(rootEntity);
+
+		/*auto meshRenderer = new Qt3DRender::QMesh(rootEntity);
 		meshRenderer->setSource(
 			QUrl::fromLocalFile(QStringLiteral("C:/3dData/mesh/bunny.obj")));
 
+		auto opaqueMaterial = new Klein::UnlitMaterial(rootEntity);
+		opaqueMaterial->setBaseColor(QColor("teal"));
 		auto transparentMaterial0 = new Klein::WBOITMaterial(rootEntity);
 		transparentMaterial0->setBaseColor(QColor("orange"));
 		auto transparentMaterial1 = new Klein::WBOITMaterial(rootEntity);
@@ -69,8 +118,6 @@ namespace UI
 		transparentMaterial2->setBaseColor(QColor("lightskyblue"));
 		auto transparentMaterial3 = new Klein::WBOITMaterial(rootEntity);
 		transparentMaterial3->setBaseColor(QColor("orchid"));
-		auto opaqueMaterial = new Klein::UnlitMaterial(rootEntity);
-		opaqueMaterial->setBaseColor(QColor("teal"));
 
 		auto transform0 = new Qt3DCore::QTransform(rootEntity);
 		transform0->setTranslation(QVector3D(1.0f, 0.0f, 1.0f));
@@ -88,9 +135,12 @@ namespace UI
 		transform4->setScale(0.5f);
 
 		// WBOIT material also needs an offscreen render target
-		mp_impl->mp_compositor = new Klein::WBOITCompositor(rootEntity);
-		mp_impl->mp_compositor->setSize(this->size());
+		// copypasted to below
 
+		auto opaqueMesh = new Qt3DCore::QEntity(rootEntity);
+		opaqueMesh->addComponent(opaqueMaterial);
+		opaqueMesh->addComponent(meshRenderer);
+		opaqueMesh->addComponent(transform4);
 		auto transparentMesh0 = new Qt3DCore::QEntity(rootEntity);
 		transparentMesh0->addComponent(transparentMaterial0);
 		transparentMesh0->addComponent(meshRenderer);
@@ -106,11 +156,11 @@ namespace UI
 		auto transparentMesh3 = new Qt3DCore::QEntity(rootEntity);
 		transparentMesh3->addComponent(transparentMaterial3);
 		transparentMesh3->addComponent(meshRenderer);
-		transparentMesh3->addComponent(transform3);
-		auto opaqueMesh = new Qt3DCore::QEntity(rootEntity);
-		opaqueMesh->addComponent(opaqueMaterial);
-		opaqueMesh->addComponent(meshRenderer);
-		opaqueMesh->addComponent(transform4);
+		transparentMesh3->addComponent(transform3);*/
+
+        // WBOIT material also needs an offscreen render target
+        mp_impl->mp_compositor = new Klein::WBOITCompositor(rootEntity);
+        mp_impl->mp_compositor->setSize(size());
 
 		mp_impl->mp_camera = new Qt3DRender::QCamera(rootEntity);
 		mp_impl->mp_camera->setPosition(QVector3D(2.0f, 0.0f, 0.0f));
@@ -120,12 +170,14 @@ namespace UI
 
 		mp_impl->mp_camera_controller = new Klein::TrackballCameraController(rootEntity);
 		mp_impl->mp_camera_controller->setCamera(mp_impl->mp_camera);
-		mp_impl->mp_camera_controller->setWindowSize(this->size());
+		mp_impl->mp_camera_controller->setWindowSize(size());
+
+        //mp_impl->mp_scene = rootEntity;
 
 		return rootEntity;
 	}
 
-	Qt3DRender::QRenderSettings * MainWindow3D::createRenderSettings(Qt3DCore::QEntity * root)
+	Qt3DRender::QRenderSettings* MainWindow3D::createRenderSettings(Qt3DCore::QEntity* root)
 	{
 		auto rootNode = new Qt3DRender::QFrameGraphNode(root);
 
@@ -186,5 +238,163 @@ namespace UI
 		auto settings = new Qt3DRender::QRenderSettings(root);
 		settings->setActiveFrameGraph(rootNode);
 		return settings;
+	}
+
+    void MainWindow3D::_CreateMeshFor(const Rendering::IRenderable* ip_renderable, Qt3DCore::QEntity* ip_parent) const
+    {
+        auto p_renderer = ip_renderable->GetRenderer();
+        auto p_material = ip_renderable->GetMaterial();
+        auto p_transform = ip_renderable->GetTransformation();
+
+        Q_ASSERT(p_renderer);
+        Q_ASSERT(p_material);
+        Q_ASSERT(p_transform);
+
+        auto p_mesh = new Qt3DCore::QEntity(ip_parent);
+        p_mesh->setProperty(_property_mesh, true);
+
+        RenderableData cache;
+        cache.mp_mesh = p_mesh;
+        cache.mp_material = p_material.get();
+        cache.mp_renderer = p_renderer.get();
+        cache.mp_transformation = p_transform.get();
+        mp_impl->m_renderables_cache[ip_renderable] = cache;
+
+        p_renderer->setParent(qobject_cast<Qt3DCore::QNode*>(ip_parent));
+        p_material->setParent(qobject_cast<Qt3DCore::QNode*>(ip_parent));
+        p_transform->setParent(qobject_cast<Qt3DCore::QNode*>(ip_parent));
+
+        p_mesh->addComponent(p_material.release());
+        p_mesh->addComponent(p_renderer.release());
+        p_mesh->addComponent(p_transform.release());
+    }
+
+    void MainWindow3D::_CreateMeshes(Qt3DCore::QEntity* ip_parent) const
+    {
+        const auto renderables = Rendering::RenderablesController::GetInstance().GetRenderables();
+        for (auto p_renderable : renderables)
+            _CreateMeshFor(p_renderable, ip_parent);
+    }
+
+    Qt3DCore::QEntity* MainWindow3D::_GetRootEntity() const
+    {
+        return m_aspectEngine->rootEntity() ? m_aspectEngine->rootEntity().get() : nullptr;
+    }
+
+    void MainWindow3D::_OnRenderableAdded(const Rendering::IRenderable* ip_renderable)
+    {
+        if (auto p_root = _GetRootEntity())
+            _CreateMeshFor(ip_renderable, p_root);
+    }
+
+    void MainWindow3D::_OnRenderableRemoved(const Rendering::IRenderable* ip_renderable)
+    {
+        if (mp_impl->m_renderables_cache.find(ip_renderable) == mp_impl->m_renderables_cache.end())
+            return;
+
+        auto& cached_data = mp_impl->m_renderables_cache[ip_renderable];
+
+        cached_data.mp_mesh->setEnabled(false);
+        //todo: try to delete stuff
+
+        mp_impl->m_renderables_cache.erase(ip_renderable);
+    }
+
+    void MainWindow3D::_OnRenderableMaterialChanged(const Rendering::IRenderable* ip_renderable)
+    {
+        if (mp_impl->m_renderables_cache.find(ip_renderable) == mp_impl->m_renderables_cache.end())
+            return;
+
+        auto& cached_data = mp_impl->m_renderables_cache[ip_renderable];
+
+        if (cached_data.mp_material && cached_data.mp_mesh)
+            cached_data.mp_material->removedFromEntity(cached_data.mp_mesh.data());
+
+        if (auto p_mesh = cached_data.mp_mesh)
+        {
+            auto p_new_material = ip_renderable->GetMaterial();
+            p_new_material->setParent(qobject_cast<Qt3DCore::QNode*>(p_mesh));
+            cached_data.mp_material = p_new_material.get();
+            p_mesh->addComponent(p_new_material.release());
+        }
+    }
+
+    void MainWindow3D::_OnRenderableTransformationChanged(const Rendering::IRenderable* ip_renderable)
+    {
+        if (mp_impl->m_renderables_cache.find(ip_renderable) == mp_impl->m_renderables_cache.end())
+            return;
+
+        auto& cached_data = mp_impl->m_renderables_cache[ip_renderable];
+
+        if (cached_data.mp_transformation && cached_data.mp_mesh)
+            cached_data.mp_transformation->removedFromEntity(cached_data.mp_mesh.data());
+
+        if (auto p_mesh = cached_data.mp_mesh)
+        {
+            auto p_new_transform = ip_renderable->GetTransformation();
+            p_new_transform->setParent(qobject_cast<Qt3DCore::QNode*>(p_mesh));
+            cached_data.mp_transformation = p_new_transform.get();
+            p_mesh->addComponent(p_new_transform.release());
+        }
+    }
+
+    void MainWindow3D::_OnRenderableRendererChanged(const Rendering::IRenderable* ip_renderable)
+    {
+        if (mp_impl->m_renderables_cache.find(ip_renderable) == mp_impl->m_renderables_cache.end())
+            return;
+
+        auto& cached_data = mp_impl->m_renderables_cache[ip_renderable];
+
+        if (cached_data.mp_renderer && cached_data.mp_mesh)
+            cached_data.mp_renderer->removedFromEntity(cached_data.mp_mesh.data());
+
+        if (auto p_mesh = cached_data.mp_mesh)
+        {
+            auto p_new_renderer = ip_renderable->GetRenderer();
+            p_new_renderer->setParent(qobject_cast<Qt3DCore::QNode*>(p_mesh));
+            cached_data.mp_renderer = p_new_renderer.get();
+            p_mesh->addComponent(p_new_renderer.release());
+        }
+    }
+
+	void MainWindow3D::UpdateSceneGraph()
+	{
+		if (!isExposed() || !isVisible()) // suppress updates of invisible window
+			return;
+        
+        // todo: update only changed renderables
+        if (auto p_root = m_aspectEngine->rootEntity())
+        {
+            auto old_child_nodes = p_root->childNodes();
+
+            // collect new meshes
+            _CreateMeshes(p_root.get());
+
+            // remove old meshes
+            for (auto& p_child : old_child_nodes)
+            {
+                auto prop = p_child->property(_property_mesh);
+                if (prop.isValid() && prop.canConvert<bool>() && prop.toBool())
+                {
+                    auto p_mesh = qobject_cast<Qt3DCore::QEntity*>(p_child);
+                    Q_ASSERT(p_mesh);
+                    p_mesh->setEnabled(false);
+                    p_mesh->setProperty(_property_mesh, false); // no need to do all the same twice
+
+                    // we can't delete mesh here because of crash in qt but we still can delete some stuff
+                    for (auto p_node : p_mesh->childNodes())
+                    {
+                        if (auto p_entity = qobject_cast<Qt3DCore::QEntity*>(p_node))
+                        {
+                            p_entity->deleteLater();
+                        }
+                        else if (auto p_component = qobject_cast<Qt3DRender::QGeometryRenderer*>(p_node))
+                        {
+                            p_component->deleteLater();
+                        }
+                    }
+                }
+            }
+        }
 	}
 }

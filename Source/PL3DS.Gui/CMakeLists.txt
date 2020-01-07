@@ -16,41 +16,42 @@ file(GLOB Resources "*.qrc")
 add_executable(${ProjectName} ${Headers} ${Sources} ${Resources})	
 set_target_properties(PL3DS.Gui PROPERTIES OUTPUT_NAME "${ProjectName}")
 
-#Internal dependencies
-target_link_libraries(${ProjectName} Math.Core)
-
-
 #Qt
 find_package(Qt5 REQUIRED COMPONENTS 
-			 Core 
-			 Gui 
-			 Widgets 
-			 3DCore 
-			 3DExtras 
-			 3DRender 
-			 3DInput)
+             Core 
+             Gui 
+             Widgets 
+             3DCore 
+             DExtras 
+             3DRender 
+             3DInput)
 
 #boost
 find_package(Boost REQUIRED COMPONENTS 
-			 system 
-			 filesystem)
+             system 
+             filesystem)
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
 
 target_link_libraries(${ProjectName} 
-					  #Qt
-					  Qt5::Core 
-					  Qt5::Gui 
-					  Qt5::Widgets
-					  Qt5::3DCore
-					  Qt5::3DExtras
-					  Qt5::3DRender
-					  Qt5::3DInput
+                      #Qt
+                      Qt5::Core 
+                      Qt5::Gui 
+                      Qt5::Widgets
+                      Qt5::3DCore
+                      Qt5::3DExtras
+                      Qt5::3DRender
+                      Qt5::3DInput
 
-					  #Boost
-					  ${Boost_FILESYSTEM_LIBRARY}
-  					  ${Boost_SYSTEM_LIBRARY}
+                      #Boost
+                      ${Boost_FILESYSTEM_LIBRARY}
+                      ${Boost_SYSTEM_LIBRARY}
 
-					  #3rd party
-					  Klein::Klein
-					  )
+                      #Internal
+                      Math.Core
+                      Rendering.Core
+                      Rendering.Main
+
+                      #3rd party
+                      Klein::Klein
+                      )

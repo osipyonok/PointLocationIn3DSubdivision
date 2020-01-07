@@ -1,2 +1,4 @@
 add_subdirectory(Math.Core)
 add_subdirectory(PL3DS.Gui)
+add_subdirectory(Rendering.Core)
+add_subdirectory(Rendering.Main)

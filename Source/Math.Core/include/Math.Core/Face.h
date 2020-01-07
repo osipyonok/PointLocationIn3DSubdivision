@@ -2,6 +2,8 @@
 
 #include <Math.Core/API.h>
 
+#include <QObject>
+
 #include <memory>
 #include <vector>
 
@@ -10,13 +12,15 @@ class Plane;
 class Point3D;
 class Triangle;
 
-class MATH_CORE_LIB_EXPORT Face final
+class MATH_CORE_API Face final : public QObject
 {
+	Q_OBJECT
+
 public:
 	Face(const Plane& i_plane, Mesh* ip_owner);
 	Face(const Plane& i_plane, Triangle& i_root_triangle, Mesh* ip_owner);
 	
-	~Face();
+	~Face() override;
 
 	Plane GetPlane() const;
 
