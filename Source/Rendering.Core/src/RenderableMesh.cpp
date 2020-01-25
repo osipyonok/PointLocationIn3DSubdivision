@@ -5,6 +5,7 @@
 #include <Math.Core/Mesh.h>
 
 #include <Klein/Render/UnlitMaterial.h>
+#include <Klein/Render/UnlitSolidWireframeMaterial.h>
 #include <Klein/Render/WBOITMaterial.h>
 
 #include <QMatrix4x4>
@@ -12,6 +13,8 @@
 #include <Qt3DCore/QTransform>
 
 #include <Qt3DRender/QMesh>
+
+#include <Qt3DRender>
 
 
 namespace Rendering
@@ -32,7 +35,7 @@ namespace Rendering
         {
             case RenderingStyle::Opaque:
             {
-                auto p_material = std::make_unique<Klein::UnlitMaterial>();
+                auto p_material = std::make_unique<Klein::UnlitSolidWireframeMaterial>();
                 p_material->setBaseColor(m_color);
                 return std::move(p_material);
             }

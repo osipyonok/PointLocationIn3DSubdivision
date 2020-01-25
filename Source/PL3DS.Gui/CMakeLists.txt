@@ -22,7 +22,7 @@ find_package(Qt5 REQUIRED COMPONENTS
              Gui 
              Widgets 
              3DCore 
-             DExtras 
+             3DExtras 
              3DRender 
              3DInput)
 

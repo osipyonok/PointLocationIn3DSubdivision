@@ -18,10 +18,10 @@ class MATH_CORE_API Point3D : public QObject
 
 public:
 	Point3D();
-	explicit Point3D(double* i_coordinates);
+	explicit Point3D(const double* const ip_coordinates);
 	Point3D(double i_x, double i_y, double i_z);
 
-	explicit Point3D(const Point3D& i_other);
+	Point3D(const Point3D& i_other);
 
 	virtual ~Point3D() override;
 

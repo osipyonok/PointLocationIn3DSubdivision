@@ -7,8 +7,8 @@ Point3D::Point3D()
 {
 }
 
-Point3D::Point3D(double* i_coordinates)
-	: Point3D(i_coordinates[0], i_coordinates[1], i_coordinates[2])
+Point3D::Point3D(const double* const ip_coordinates)
+	: Point3D(ip_coordinates[0], ip_coordinates[1], ip_coordinates[2])
 {
 }
 
