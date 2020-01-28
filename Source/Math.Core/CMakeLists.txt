@@ -5,11 +5,10 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
-file(GLOB PublicHeaders  "include/${ProjectName}/*.h")
-file(GLOB PrivateHeaders "*.h")
-file(GLOB Sources 		 "*.cpp")
+file(GLOB_RECURSE PublicHeaders  "include/${ProjectName}/*")
+file(GLOB_RECURSE Sources 		 "src/*")
 
-add_library(${ProjectName} SHARED ${PublicHeaders} ${PrivateHeaders} ${Sources})
+add_library(${ProjectName} SHARED ${PublicHeaders} ${Sources})
 
 include(GenerateExportHeader)
 generate_export_header(${ProjectName} 
