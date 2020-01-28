@@ -25,6 +25,12 @@ if(PatchFolders)
         set(PathToBePatched "ThirdParty/${ThirdPartyFolder}")
         foreach(Patch ${Patches})
             message(STATUS "Applying patch ${Patch}")
+            #abort previous failed patch application (if any)
+            execute_process(
+                            COMMAND "${GIT_EXECUTABLE}" "am" "--abort"
+                            WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/${PathToBePatched}"
+                            OUTPUT_QUIET
+                            ERROR_QUIET)
             execute_process(
                             COMMAND "${GIT_EXECUTABLE}" "am" "--3way" "--ignore-space-change" "--keep-cr" "${Patch}"
                             WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/${PathToBePatched}"
