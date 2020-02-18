@@ -17,9 +17,19 @@ generate_export_header(${ProjectName}
 
 find_package(Qt5Core REQUIRED)
 
+#boost
+find_package(Boost REQUIRED COMPONENTS 
+             system 
+             )
+INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
+
 target_link_libraries(${ProjectName} 
                       #Qt
-                      Qt5::Core)
+                      Qt5::Core
+                      
+                      #Boost
+                      ${Boost_SYSTEM_LIBRARY}
+                      )
 
 target_include_directories(${ProjectName} PUBLIC 
                            ${CMAKE_CURRENT_SOURCE_DIR}/include

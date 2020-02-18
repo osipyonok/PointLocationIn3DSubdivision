@@ -126,8 +126,43 @@ const std::vector<Triangle*>& Point3D::GetTriangles() const
 	return m_triangles;
 }
 
+bool Point3D::operator<(const Point3D& i_other) const
+{
+    return ComparePointsZYX(*this, i_other);
+}
 
+bool Point3D::operator==(const Point3D& i_other) const
+{
+    return Get(0) == i_other.Get(0)
+        && Get(1) == i_other.Get(1)
+        && Get(2) == i_other.Get(2);
+}
 
+Point3D& Point3D::operator+=(const Point3D& i_other)
+{
+    Get(0) += i_other.Get(0);
+    Get(1) += i_other.Get(1);
+    Get(2) += i_other.Get(2);
+    return *this;
+}
+
+Point3D& Point3D::operator-=(const Point3D& i_other)
+{
+    Get(0) -= i_other.Get(0);
+    Get(1) -= i_other.Get(1);
+    Get(2) -= i_other.Get(2);
+    return *this;
+}
+
+Point3D& Point3D::operator*=(double i_value)
+{
+    Get(0) *= i_value;
+    Get(1) *= i_value;
+    Get(2) *= i_value;
+    return *this;
+}
+
+///////////////////////////////////////////////////////////////////
 
 bool ComparePointsXYZ(const Point3D& i_pt1, const Point3D& i_pt2)
 {
@@ -145,19 +180,4 @@ bool ComparePointsZYX(const Point3D& i_pt1, const Point3D& i_pt2)
 	if (i_pt1.Get(1) != i_pt2.Get(1))
 		return i_pt1.Get(1) < i_pt2.Get(1);
 	return i_pt1.Get(0) < i_pt2.Get(0);
-}
-
-bool operator<(const Point3D& i_pt1, const Point3D& i_pt2)
-{
-	return ComparePointsZYX(i_pt1, i_pt2);
-}
-
-bool operator>(const Point3D & i_pt1, const Point3D & i_pt2)
-{
-	return !(i_pt1 < i_pt2 || i_pt1 == i_pt2);
-}
-
-bool operator==(const Point3D& i_pt1, const Point3D& i_pt2)
-{
-	return i_pt1.Get(0) == i_pt2.Get(0) && i_pt1.Get(1) == i_pt2.Get(1) && i_pt1.Get(2) == i_pt2.Get(2);
 }

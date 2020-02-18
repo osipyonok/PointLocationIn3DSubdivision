@@ -4,6 +4,8 @@
 
 #include <QObject>
 
+#include <boost/operators.hpp>
+
 #include <vector>
 
 class Point3D;
@@ -12,7 +14,13 @@ class Triangle;
 MATH_CORE_API bool ComparePointsXYZ(const Point3D& i_pt1, const Point3D& i_pt2);
 MATH_CORE_API bool ComparePointsZYX(const Point3D& i_pt1, const Point3D& i_pt2);
 
-class MATH_CORE_API Point3D : public QObject
+class MATH_CORE_API Point3D 
+    : public QObject
+    , public boost::addable<Point3D>
+    , public boost::subtractable<Point3D>
+    , public boost::less_than_comparable<Point3D>
+    , public boost::equality_comparable<Point3D>
+    , public boost::multipliable2<Point3D, double>
 {
 	Q_OBJECT
 
@@ -47,9 +55,12 @@ public:
 	void RemoveTriangle(Triangle* ip_triangle);
 	const std::vector<Triangle*>& GetTriangles() const;
 
-	MATH_CORE_API friend bool operator<(const Point3D& i_pt1, const Point3D& i_pt2);
-	MATH_CORE_API friend bool operator>(const Point3D& i_pt1, const Point3D& i_pt2);
-	MATH_CORE_API friend bool operator==(const Point3D& i_pt1, const Point3D& i_pt2);
+
+    bool operator<(const Point3D& i_other) const;//zyx
+    bool operator==(const Point3D& i_other) const;
+    Point3D& operator+=(const Point3D& i_other);
+    Point3D& operator-=(const Point3D& i_other);
+    Point3D& operator*=(double i_value);
 
 private:
 	double m_coordinates[3];
