@@ -2,3 +2,7 @@
     path = ThirdParty/Klein
     url = https://github.com/unclejimbo/Klein.git
     ignore = all
+[submodule "ThirdParty/gtest"]
+    path = ThirdParty/gtest
+    url = https://github.com/google/googletest.git
+    ignore = all
