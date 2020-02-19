@@ -45,5 +45,7 @@ if(PatchFolders)
     endforeach(PatchFolder)
 endif()
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeUtilities")
+
 add_subdirectory(Source)
 add_subdirectory(ThirdParty)
