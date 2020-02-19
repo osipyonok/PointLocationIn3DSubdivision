@@ -26,77 +26,62 @@ double Distance(const Point3D& i_point, const Triangle& i_triangle)
     auto f10 = b0 + a00;
     auto f01 = b0 + a01;
 
-    auto get_min_edge02 = [](double i_a11, double i_b1, std::pair<double, double>& o_point)
+    using _Point2D = std::pair<double, double>;
+
+    auto get_min_edge02 = [=]() -> _Point2D
     {
-        o_point.first = 0.;
-        if (i_b1 >= 0)
-            o_point.second = 0.;
-        else if (i_a11 + i_b1 <= 0)
-            o_point.second = 1.;
-        else
-            o_point.second = -i_b1 / i_a11;
+        return { 0 , b1 >= 0 ? 0 : (a11 + b1 <= 0 ? 1 : -b1 / a11) };
     };
 
-    auto get_min_edge12 = [](double i_a01, double i_a11, double i_b1, double i_f10, double i_f01, std::pair<double, double>& o_point)
+    auto get_min_edge12 = [=]() -> _Point2D
     {
-        auto h0 = i_a01 + i_b1 - i_f10;
-        if (h0 < 0)
-        {
-            auto h1 = i_a11 + i_b1 - i_f01;
-            o_point.second = h1 <= 0 ? 1. : (h0 / (h0 - h1));
-        }
-        else
-        {
-            o_point.second = 0.;
-        }
-        o_point.first = 1. - o_point.second;
+        auto h0 = a01 + b1 - f10;
+        auto h1 = a11 + b1 - f01;
+        auto y = h0 < 0 ? (h1 <= 0 ? 1. : (h0 / (h0 - h1))) : 0;
+        return { 1 - y, y };
     };
 
-    auto get_min_inside = [](const std::pair<double, double>& i_p0, const std::pair<double, double>& i_p1, double h0, double h1, std::pair<double, double>& o_point)
+    auto get_min_inside = [](const auto& i_p0, const auto& i_p1, double h0, double h1) -> _Point2D
     {
         auto z = h0 / (h0 - h1);
-        o_point.first  = (1 - z) * i_p0.first  + z * i_p1.first;
-        o_point.second = (1 - z) * i_p0.second + z * i_p1.second;
+        return { (1 - z) * i_p0.first + z * i_p1.first, (1 - z) * i_p0.second + z * i_p1.second };
     };
 
-    std::pair<double, double> point;
+    _Point2D point = { 0, 0 };
 
     if (f00 >= 0)
     {
         if (f01 < 0)
         {
-            std::pair<double, double> point1 = { 0., f00 / (f00 - f01) };
-            std::pair<double, double> point2 = { f01 / (f01 - f10), 1. - f01 / (f01 - f10) };
+            _Point2D point1 = { 0., f00 / (f00 - f01) };
+            _Point2D point2 = { f01 / (f01 - f10), 1. - f01 / (f01 - f10) };
 
             auto h0 = (point2.second - point1.second) * (a11 * point1.second + b1);
             if (h0 >= 0)
             {
-                get_min_edge02(a11, b1, point);
+                point = get_min_edge02();
             }
             else
             {
                 auto h1 = (point2.second - point1.second) * (a01 * point1.first + a11 * point1.second + b1);
-                if (h1 <= 0)
-                    get_min_edge12(a01, a11, b1, f10, f01, point);
-                else
-                    get_min_inside(point1, point2, h0, h1, point);
+                point = h1 <= 0 ? get_min_edge12() : get_min_inside(point1, point2, h0, h1);
             }
         }
         else
         {
-            get_min_edge02(a11, b1, point);
+            point = get_min_edge02();
         }
     }
     else if (f01 <= 0)
     {
         if (f10 <= 0)
         {
-            get_min_edge12(a01, a11, b1, f10, f01, point);
+            point = get_min_edge12();
         }
         else
         {
-            std::pair<double, double> point1 = { f00 / (f00 - f10), 0. };
-            std::pair<double, double> point2 = { f01 / (f01 - f10), 1. - f01 / (f01 - f10) };
+            _Point2D point1 = { f00 / (f00 - f10), 0. };
+            _Point2D point2 = { f01 / (f01 - f10), 1. - f01 / (f01 - f10) };
             auto h0 = point2.second * (a01 * point1.first + b1);
             if (h0 >= 0)
             {
@@ -105,44 +90,30 @@ double Distance(const Point3D& i_point, const Triangle& i_triangle)
             else
             {
                 auto h1 = point2.second * (a01 * point2.first + a11 * point2.second + b1);
-                if (h1 <= 0)
-                {
-                    get_min_edge12(a01, a11, b1, f10, f01, point);
-                }
-                else
-                {
-                    get_min_inside(point1, point2, h0, h1, point);
-                }
+                point = h1 <= 0 ? get_min_edge12() : get_min_inside(point1, point2, h0, h1);
             }
         }
     }
     else if (f10 <= 0)
     {
-        std::pair<double, double> point1 = { 0, f00 / (f00 - f01) };
-        std::pair<double, double> point2 = { f01 / (f01 - f10), 1. - f01 / (f01 - f10) };
+        _Point2D point1 = { 0, f00 / (f00 - f01) };
+        _Point2D point2 = { f01 / (f01 - f10), 1. - f01 / (f01 - f10) };
         auto dt1 = point2.second - point1.second;
         auto h0 = dt1 * (a11 * point1.second + b1);
         if (h0 >= 0)
         {
-            get_min_edge02(a11, b1, point);
+            point = get_min_edge02();
         }
         else
         {
             auto h1 = dt1 * (a01 * point2.first + a11 * point2.second + b1);
-            if (h1 <= 0)
-            {
-                get_min_edge12(a01, a11, b1, f10, f01, point);
-            }
-            else
-            {
-                get_min_inside(point1, point2, h0, h1, point);
-            }
+            point = h1 <= 0 ? get_min_edge12() : get_min_inside(point1, point2, h0, h1);
         }
     }
     else
     {
-        std::pair<double, double> point1 = { f00 / (f00 - f10), 0 };
-        std::pair<double, double> point2 = { 0, f00 / (f00 - f01) };
+        _Point2D point1 = { f00 / (f00 - f10), 0 };
+        _Point2D point2 = { 0, f00 / (f00 - f01) };
         auto h0 = point2.second * (a01 * point1.first + b1);
         if (h0 >= 0)
         {
@@ -151,21 +122,12 @@ double Distance(const Point3D& i_point, const Triangle& i_triangle)
         else
         {
             auto h1 = point2.second * (a11 * point2.second + b1);
-            if (h1 <= 0)
-            {
-                get_min_edge02(a11, b1, point);
-            }
-            else
-            {
-                get_min_inside(point1, point2, h0, h1, point);
-            }
+            point = h1 <= 0 ? get_min_edge02() : get_min_inside(point1, point2, h0, h1);
         }
     }
 
     auto nearest = *i_triangle.GetPoint(0) + point.first * edge1 + point.second * edge2;
     auto dist_sqr = Dot(Vector3D{ nearest - i_point }, Vector3D{ nearest - i_point });
-    // todo
-    // https://www.geometrictools.com/GTEngine/Include/Mathematics/GteDistPointTriangle.h
-    // http://web.mit.edu/ehliu/Public/Darmofal/DistancePoint3Triangle3.pdf
+
     return std::sqrt(dist_sqr);
 }
