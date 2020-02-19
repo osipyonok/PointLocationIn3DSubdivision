@@ -21,7 +21,7 @@ find_package(Qt5Core REQUIRED)
 find_package(Boost REQUIRED COMPONENTS 
              system 
              )
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
+
 
 target_link_libraries(${ProjectName} 
                       #Qt
@@ -33,7 +33,9 @@ target_link_libraries(${ProjectName}
 
 target_include_directories(${ProjectName} PUBLIC 
                            ${CMAKE_CURRENT_SOURCE_DIR}/include
-                           ${CMAKE_BINARY_DIR}/include)
+                           ${CMAKE_BINARY_DIR}/include
+                           ${Boost_INCLUDE_DIR}
+                           )
 
 
 #tests

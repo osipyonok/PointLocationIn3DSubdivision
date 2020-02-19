@@ -123,6 +123,7 @@ inline Matrix<T, N>& Matrix<T, N>::operator=(const Matrix<T, N>& i_matrix)
         return *this;
 
     memcpy(_GetDataPtr(), i_matrix._GetDataPtr(), N * N * sizeof(T));
+    return *this;
 }
 
 template<typename T, size_t N>
