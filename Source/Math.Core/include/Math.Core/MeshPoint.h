@@ -21,7 +21,7 @@ public:
 
     void AddTriangle(Triangle* ip_triangle);
     void RemoveTriangle(Triangle* ip_triangle);
-    const std::vector<Triangle*>& GetTriangles() const;
+    std::vector<Triangle*> GetTriangles() const;
 
 private:
     std::unordered_set<Triangle*> m_triangles;

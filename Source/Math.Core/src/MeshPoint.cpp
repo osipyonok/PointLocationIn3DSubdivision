@@ -30,7 +30,7 @@ void MeshPoint::RemoveTriangle(Triangle* ip_triangle)
     m_triangles.erase(ip_triangle);
 }
 
-const std::vector<Triangle*>& MeshPoint::GetTriangles() const
+std::vector<Triangle*> MeshPoint::GetTriangles() const
 {
     return std::vector<Triangle*>(m_triangles.begin(), m_triangles.end());
 }
