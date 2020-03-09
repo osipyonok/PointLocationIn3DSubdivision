@@ -6,6 +6,7 @@
 
 #include <memory>
 
+class MeshPoint;
 class Point3D;
 class Triangle;
 class Vector3D;
@@ -18,14 +19,14 @@ public:
 	Mesh();
 	~Mesh() override;
 
-    Point3D* AddPoint(const Point3D& i_point);
-    Point3D* AddPoint(double i_x, double i_y, double i_z);
+    MeshPoint* AddPoint(const Point3D& i_point);
+    MeshPoint* AddPoint(double i_x, double i_y, double i_z);
     Triangle* AddTriangle(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c);
 
 
-    Point3D* GetPoint(const Point3D& i_point) const;
-    Point3D* GetPoint(double i_x, double i_y, double i_z) const;
-    Point3D* GetPoint(size_t i_index) const;
+    MeshPoint* GetPoint(const Point3D& i_point) const;
+    MeshPoint* GetPoint(double i_x, double i_y, double i_z) const;
+    MeshPoint* GetPoint(size_t i_index) const;
     Triangle* GetTriangleOriented(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c) const;
     Triangle* GetTriangle(size_t i_index) const;
 
@@ -33,7 +34,7 @@ public:
     size_t GetTrianglesCount() const;
 
 private:
-    Point3D* _AddPoint(double i_x, double i_y, double i_z);
+    MeshPoint* _AddPoint(double i_x, double i_y, double i_z);
 
     Triangle* _GetTriangleSpecific(const Point3D* ip_a, const Point3D* ip_b, const Point3D* ip_c) const;
 private:

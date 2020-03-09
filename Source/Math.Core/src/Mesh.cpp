@@ -1,6 +1,6 @@
 #include "Math.Core/Mesh.h"
 
-#include "Math.Core/Point3D.h"
+#include "Math.Core/MeshPoint.h"
 #include "Math.Core/Triangle.h"
 
 #include <vector>
@@ -9,7 +9,7 @@
 
 struct Mesh::Impl
 {
-    std::vector<std::unique_ptr<Point3D>> m_points;
+    std::vector<std::unique_ptr<MeshPoint>> m_points;
     std::vector<std::unique_ptr<Triangle>> m_triangles;
 };
 
@@ -21,7 +21,7 @@ Mesh::Mesh()
 
 Mesh::~Mesh() = default;
 
-Point3D* Mesh::AddPoint(const Point3D& i_point)
+MeshPoint* Mesh::AddPoint(const Point3D& i_point)
 {
     if (auto p_point = GetPoint(i_point))
         return p_point;
@@ -29,7 +29,7 @@ Point3D* Mesh::AddPoint(const Point3D& i_point)
     return _AddPoint(i_point.GetX(), i_point.GetY(), i_point.GetZ());
 }
 
-Point3D* Mesh::AddPoint(double i_x, double i_y, double i_z)
+MeshPoint* Mesh::AddPoint(double i_x, double i_y, double i_z)
 {
     if (auto p_point = GetPoint(i_x, i_y, i_z))
         return p_point;
@@ -52,7 +52,7 @@ Triangle* Mesh::AddTriangle(const Point3D& i_a, const Point3D& i_b, const Point3
     return mp_impl->m_triangles.back().get();
 }
 
-Point3D* Mesh::GetPoint(const Point3D& i_point) const
+MeshPoint* Mesh::GetPoint(const Point3D& i_point) const
 {
     for (const auto& p_point : mp_impl->m_points)
     {
@@ -62,12 +62,12 @@ Point3D* Mesh::GetPoint(const Point3D& i_point) const
     return nullptr;
 }
 
-Point3D* Mesh::GetPoint(double i_x, double i_y, double i_z) const
+MeshPoint* Mesh::GetPoint(double i_x, double i_y, double i_z) const
 {
     return GetPoint({ i_x, i_y, i_z });
 }
 
-Point3D* Mesh::GetPoint(size_t i_index) const
+MeshPoint* Mesh::GetPoint(size_t i_index) const
 {
     Q_ASSERT(i_index >= 0 && i_index < GetPointsCount());
     return mp_impl->m_points[i_index].get();
@@ -108,9 +108,9 @@ size_t Mesh::GetTrianglesCount() const
     return mp_impl->m_triangles.size();
 }
 
-Point3D* Mesh::_AddPoint(double i_x, double i_y, double i_z)
+MeshPoint* Mesh::_AddPoint(double i_x, double i_y, double i_z)
 {
-    mp_impl->m_points.emplace_back(std::make_unique<Point3D>(i_x, i_y, i_z));
+    mp_impl->m_points.emplace_back(std::make_unique<MeshPoint>(i_x, i_y, i_z));
     return mp_impl->m_points.back().get();
 }
 

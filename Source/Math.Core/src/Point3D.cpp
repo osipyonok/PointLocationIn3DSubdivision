@@ -1,6 +1,6 @@
 #include "Math.Core/Point3D.h"
 
-#include <QtCore>
+#include <QtGlobal>
 
 Point3D::Point3D()
 	: Point3D(0., 0., 0.)
@@ -24,10 +24,7 @@ Point3D::Point3D(const Point3D& i_other)
 {
 }
 
-Point3D::~Point3D()
-{
-	Q_ASSERT(m_triangles.empty());
-}
+Point3D::~Point3D() = default;
 
 double Point3D::Get(short i_index) const
 {
@@ -102,28 +99,6 @@ double& Point3D::operator[](short i_index)
 {
 	Q_ASSERT(i_index >= 0 && i_index < 3);
 	return m_coordinates[i_index];
-}
-
-void Point3D::AddTriangle(Triangle* ip_triangle)
-{
-	if (std::find(m_triangles.begin(), m_triangles.end(), ip_triangle) == m_triangles.end())
-		m_triangles.push_back(ip_triangle);
-	else
-		Q_ASSERT(false);
-}
-
-void Point3D::RemoveTriangle(Triangle* ip_triangle)
-{
-	auto it = std::find(m_triangles.begin(), m_triangles.end(), ip_triangle);
-	if (it != m_triangles.end())
-		m_triangles.erase(it);
-	else
-		Q_ASSERT(false);
-}
-
-const std::vector<Triangle*>& Point3D::GetTriangles() const
-{
-	return m_triangles;
 }
 
 bool Point3D::operator<(const Point3D& i_other) const

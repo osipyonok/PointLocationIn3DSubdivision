@@ -6,10 +6,7 @@
 
 #include <boost/operators.hpp>
 
-#include <vector>
-
 class Point3D;
-class Triangle;
 
 MATH_CORE_API bool ComparePointsXYZ(const Point3D& i_pt1, const Point3D& i_pt2);
 MATH_CORE_API bool ComparePointsZYX(const Point3D& i_pt1, const Point3D& i_pt2);
@@ -51,11 +48,6 @@ public:
 	double  operator[](short i_index) const;
 	double& operator[](short i_index);
 
-	void AddTriangle(Triangle* ip_triangle);
-	void RemoveTriangle(Triangle* ip_triangle);
-	const std::vector<Triangle*>& GetTriangles() const;
-
-
     bool operator<(const Point3D& i_other) const;//zyx
     bool operator==(const Point3D& i_other) const;
     Point3D& operator+=(const Point3D& i_other);
@@ -64,6 +56,4 @@ public:
 
 private:
 	double m_coordinates[3];
-
-	std::vector<Triangle*> m_triangles;
 };

@@ -1,13 +1,66 @@
 #include "Math.Core/CommonUtilities.h"
 
+#include "Math.Core/BoundingBox.h"
 #include "Math.Core/Point3D.h"
 #include "Math.Core/Triangle.h"
 #include "Math.Core/Vector3D.h"
 #include "Math.Core/VectorUtilities.h"
 
 #include <cmath>
+#include <tuple>
 #include <utility>
 
+
+double Distance(const Point3D& i_point, const BoundingBox& i_bbox)
+{
+    if (i_bbox.ContainsPoint(i_point))
+        return 0;
+
+    std::vector<Point3D> nodes;
+    
+    auto min_point = i_bbox.GetMin();
+    auto max_point = i_bbox.GetMax();
+
+    for (auto i = 0u; i < 8; ++i)
+    {
+        nodes.emplace_back(
+            (i & 1) ? max_point.Get(0) : min_point.Get(0),
+            (i & 2) ? max_point.Get(1) : min_point.Get(1),
+            (i & 4) ? max_point.Get(2) : min_point.Get(2)
+        );
+    }
+
+    static std::vector<std::tuple<int,int,int>> triangles = // xyz ordered indexes 
+    {
+        // bottom face
+        {0, 1, 2},
+        {1, 2, 3},
+        // front face
+        {0, 1, 5},
+        {0, 5, 4},
+        // left face
+        {0, 2, 6},
+        {0, 6, 4},
+        // right face
+        {1, 3, 7},
+        {1, 7, 5},
+        // back face
+        {2, 3, 7},
+        {2, 7, 6},
+        // top face
+        {4, 5, 7},
+        {4, 7, 6}
+    };
+
+    auto distance = std::numeric_limits<double>::max();
+    for (auto indexes : triangles)
+    {
+        Triangle triangle(&nodes[std::get<0>(indexes)], &nodes[std::get<1>(indexes)], &nodes[std::get<2>(indexes)]);
+        distance = std::max(distance, Distance(i_point, triangle));
+    }
+
+    return distance;
+}
 
 double Distance(const Point3D& i_point, const Triangle& i_triangle)
 {

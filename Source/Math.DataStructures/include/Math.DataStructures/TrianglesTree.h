@@ -5,6 +5,7 @@
 #include <Math.DataStructures/GenericKDTree.h>
 
 #include <Math.Core/BoundingBox.h>
+#include <Math.Core/CommonUtilities.h>
 #include <Math.Core/Point3D.h>
 #include <Math.Core/Triangle.h>
 
@@ -84,9 +85,9 @@ struct BuildTrianglesTreeFunctor
     }
 };
 
-struct NearestTriangleFunctor
+struct NearestTriangleApproximationFunctor
 {
-    void operator()(TrianglesTreeNode& i_root, Triangle*& o_triangle, const Point3D& i_point)
+    void operator()(TrianglesTreeNode& i_root, Triangle*& io_triangle, const Point3D& i_point)
     {
         if (!i_root.GetInfo().m_bbox.ContainsPoint(i_point))
             return;
@@ -96,11 +97,28 @@ struct NearestTriangleFunctor
         {
             Q_ASSERT(i_root.HasLeftChild());
             Q_ASSERT(i_root.HasRightChild());
-            this->operator()(i_root.GetLeftChild(), o_triangle, i_point);
-            this->operator()(i_root.GetRightChild(), o_triangle, i_point);
+            this->operator()(i_root.GetLeftChild(), io_triangle, i_point);
+            this->operator()(i_root.GetRightChild(), io_triangle, i_point);
             return;
         }
 
-        // todo
+        auto nearest_distance = io_triangle ? Distance(i_point, *io_triangle) : std::numeric_limits<double>::max();
+        for (auto p_triangle : i_root.GetInfo().m_triangles)
+        {
+            auto current_distance = Distance(i_point, *p_triangle);
+            if (current_distance < nearest_distance)
+            {
+                nearest_distance = current_distance;
+                io_triangle = p_triangle;
+            }
+        }
+    }
+};
+
+struct BruteforceInRadius
+{
+    void operator()(TrianglesTreeNode& i_root, Triangle*& io_triangle, const Point3D& i_point, double i_radius)
+    {
+
     }
 };

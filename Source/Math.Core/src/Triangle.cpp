@@ -23,9 +23,6 @@ Triangle::Triangle(Point3D* ip_point1, Point3D* ip_point2, Point3D* ip_point3,
 	m_neighbors[1] = ip_tr2;
 	m_neighbors[2] = ip_tr3;
 
-	m_points[0]->AddTriangle(this);
-	m_points[1]->AddTriangle(this);
-	m_points[2]->AddTriangle(this);
 
 	if (m_neighbors[0])
 		m_neighbors[0]->_SetNeighborForEdge(m_points[1], m_points[0], this);
@@ -47,10 +44,6 @@ Triangle::Triangle(Triangle&& i_triangle)
 
 Triangle::~Triangle()
 {
-	m_points[0]->RemoveTriangle(this);
-	m_points[1]->RemoveTriangle(this);
-	m_points[2]->RemoveTriangle(this);
-
 	if (m_neighbors[0])
 		m_neighbors[0]->_RemoveNeighborForEdge(m_points[1], m_points[0], this);
 	if (m_neighbors[1])
