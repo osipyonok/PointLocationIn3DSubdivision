@@ -1,7 +1,5 @@
 #include "Math.Core/Triangle.h"
 
-#include "Math.Core/Face.h"
-#include "Math.Core/Plane.h"
 #include "Math.Core/Vector3D.h"
 #include "Math.Core/VectorUtilities.h"
 
@@ -11,13 +9,11 @@
 #include <iterator>
 
 Triangle::Triangle(Point3D* ip_point1, Point3D* ip_point2, Point3D* ip_point3, 
-				   Triangle* ip_tr1, Triangle* ip_tr2, Triangle* ip_tr3, Mesh* ip_owner)
+				   Triangle* ip_tr1, Triangle* ip_tr2, Triangle* ip_tr3)
 {
 	m_points[0] = ip_point1;
 	m_points[1] = ip_point2;
 	m_points[2] = ip_point3;
-
-	mp_face = std::make_shared<Face>(Plane(*ip_point1, GetNormal()), *this, ip_owner);
 
 	m_neighbors[0] = ip_tr1;
 	m_neighbors[1] = ip_tr2;
@@ -30,14 +26,10 @@ Triangle::Triangle(Point3D* ip_point1, Point3D* ip_point2, Point3D* ip_point3,
 		m_neighbors[1]->_SetNeighborForEdge(m_points[2], m_points[1], this);
 	if (m_neighbors[2])
 		m_neighbors[2]->_SetNeighborForEdge(m_points[0], m_points[2], this);
-
-	SetOwner(ip_owner);
 }
 
 Triangle::Triangle(Triangle&& i_triangle)
 {
-    std::swap(mp_owner, i_triangle.mp_owner);
-    std::swap(mp_face, i_triangle.mp_face);
     std::swap(m_points, i_triangle.m_points);
     std::swap(m_neighbors, i_triangle.m_neighbors);
 }
@@ -69,36 +61,6 @@ Vector3D Triangle::GetNormal() const
 	return Cross({ *m_points[0], *m_points[1] }, { *m_points[0], *m_points[2] }).Normalized();
 }
 
-Mesh* Triangle::GetOwner() const
-{
-	return mp_owner;
-}
-
-void Triangle::SetOwner(Mesh* ip_mesh)
-{
-	if (ip_mesh == mp_owner)
-		return;
-
-	mp_owner = ip_mesh;
-
-	if (m_neighbors[0])
-		m_neighbors[0]->SetOwner(mp_owner);
-	if (m_neighbors[1])
-		m_neighbors[1]->SetOwner(mp_owner);
-	if (m_neighbors[2])
-		m_neighbors[2]->SetOwner(mp_owner);
-}
-
-Face* Triangle::GetFace() const
-{
-	return mp_face.get();
-}
-
-void Triangle::SetFace(std::shared_ptr<Face> ip_face)
-{
-	mp_face = ip_face;
-}
-
 void Triangle::_SetNeighborForEdge(Point3D* ip_first_point, Point3D* ip_second_point, Triangle* ip_triangle)
 {
 	auto it = std::find(std::begin(m_points), std::end(m_points), ip_first_point);
@@ -109,11 +71,6 @@ void Triangle::_SetNeighborForEdge(Point3D* ip_first_point, Point3D* ip_second_p
 	Q_ASSERT(m_neighbors[(id + 2) % 3] == nullptr);
 
 	m_neighbors[(id + 2) % 3] = ip_triangle;
-
-	if (ip_triangle->mp_face->GetPlane() == mp_face->GetPlane())
-	{
-		mp_face->MergeWithFace(*ip_triangle->mp_face);
-	}
 }
 
 void Triangle::_RemoveNeighborForEdge(Point3D* ip_first_point, Point3D* ip_second_point, Triangle* ip_triangle)
@@ -125,11 +82,6 @@ void Triangle::_RemoveNeighborForEdge(Point3D* ip_first_point, Point3D* ip_secon
 	Q_ASSERT(m_points[(id + 2) % 3] == ip_second_point);
 	Q_ASSERT(m_neighbors[(id + 2) % 3] == ip_triangle);
 
-	m_neighbors[(id + 2) % 3] = nullptr;
-
-	if (ip_triangle->mp_face->GetPlane() == mp_face->GetPlane())
-	{
-		// TODO : invalidate mp_face
-	}
+    m_neighbors[(id + 2) % 3] = nullptr;
 }
 

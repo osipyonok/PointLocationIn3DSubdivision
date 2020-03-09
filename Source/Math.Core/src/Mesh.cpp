@@ -48,7 +48,6 @@ Triangle* Mesh::AddTriangle(const Point3D& i_a, const Point3D& i_b, const Point3
     Q_ASSERT(p_pnt3);
 
     mp_impl->m_triangles.emplace_back(std::make_unique<Triangle>(p_pnt1, p_pnt2, p_pnt3));//other params
-    mp_impl->m_triangles.back()->SetOwner(this);
     return mp_impl->m_triangles.back().get();
 }
 
