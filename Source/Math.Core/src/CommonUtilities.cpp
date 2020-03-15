@@ -55,7 +55,7 @@ double Distance(const Point3D& i_point, const BoundingBox& i_bbox)
     auto distance = std::numeric_limits<double>::max();
     for (auto indexes : triangles)
     {
-        Triangle triangle(&nodes[std::get<0>(indexes)], &nodes[std::get<1>(indexes)], &nodes[std::get<2>(indexes)]);
+        Triangle triangle(nodes[std::get<0>(indexes)], nodes[std::get<1>(indexes)], nodes[std::get<2>(indexes)]);
         distance = std::max(distance, Distance(i_point, triangle));
     }
 
@@ -64,9 +64,9 @@ double Distance(const Point3D& i_point, const BoundingBox& i_bbox)
 
 double Distance(const Point3D& i_point, const Triangle& i_triangle)
 {
-    auto diff = i_point - *i_triangle.GetPoint(0);
-    auto edge1 = *i_triangle.GetPoint(1) - *i_triangle.GetPoint(0);
-    auto edge2 = *i_triangle.GetPoint(2) - *i_triangle.GetPoint(0);
+    auto diff = i_point - i_triangle.GetPoint(0);
+    auto edge1 = i_triangle.GetPoint(1) - i_triangle.GetPoint(0);
+    auto edge2 = i_triangle.GetPoint(2) - i_triangle.GetPoint(0);
 
     auto a00 = Vector3D(edge1).LengthSqr();
     auto a01 = Dot(Vector3D(edge1), Vector3D(edge2));
@@ -179,7 +179,7 @@ double Distance(const Point3D& i_point, const Triangle& i_triangle)
         }
     }
 
-    auto nearest = *i_triangle.GetPoint(0) + point.first * edge1 + point.second * edge2;
+    auto nearest = i_triangle.GetPoint(0) + point.first * edge1 + point.second * edge2;
     auto dist_sqr = Dot(Vector3D{ nearest - i_point }, Vector3D{ nearest - i_point });
 
     return std::sqrt(dist_sqr);

@@ -1,10 +1,11 @@
 #include <iostream>
 
-#include <Math.Core/Point3D.h>
 #include <Math.Core/Triangle.h>
 #include <Math.Core/Vector3D.h>
 #include <Math.Core/Plane.h>
 #include <Math.Core/Mesh.h>
+#include <Math.Core/MeshPoint.h>
+#include <Math.Core/MeshTriangle.h>
 
 #include <Rendering.Core/RenderableMesh.h>
 

@@ -2,38 +2,50 @@
 
 #include <Math.Core/API.h>
 
+#include <Math.Core/Point3D.h>
+
 #include <QObject>
 
+#include <array>
 #include <memory>
 
-class Point3D;
+#include <boost/optional.hpp>
+
 class Vector3D;
 
-class MATH_CORE_API Triangle final : public QObject
+class Triangle;
+
+MATH_CORE_API size_t hash_value(const Triangle& i_triangle);
+
+class MATH_CORE_API Triangle : public QObject
 {
 	Q_OBJECT
 
 public:
-	Triangle(Point3D* ip_point1, Point3D* ip_point2, Point3D* ip_point3, 
-			 Triangle* ip_tr1 = nullptr, Triangle* ip_tr2 = nullptr, Triangle* ip_tr3 = nullptr);
-	
+	Triangle(const Point3D& i_point1, const Point3D& i_point2, const Point3D& i_point3);
+    Triangle(const Triangle& i_other);
+
     Triangle(Triangle&& i_triangle);
 
 	~Triangle() override;
 
-	Point3D* GetPoint(short i_index) const;
-	
-	Triangle* GetNeighbor(short i_index) const;
+	Point3D GetPoint(short i_index) const;
 
 	Vector3D GetNormal() const;
 
-private:
-	void _SetNeighborForEdge(Point3D* ip_first_point, Point3D* ip_second_point, Triangle* ip_triangle);
-	void _RemoveNeighborForEdge(Point3D* ip_first_point, Point3D* ip_second_point, Triangle* ip_triangle);
+    Triangle& Flip();
 	
+    Triangle& operator=(const Triangle& i_other);
+
+    bool operator==(const Triangle& i_other) const;
+
+    size_t GetHash() const;
 
 private:
+    void _InvalidateHash();
 
-	Point3D* m_points[3];
-	Triangle* m_neighbors[3];
+private:
+    mutable boost::optional<size_t> m_hash_cache;
+
+	std::array<Point3D, 3> m_points;
 };

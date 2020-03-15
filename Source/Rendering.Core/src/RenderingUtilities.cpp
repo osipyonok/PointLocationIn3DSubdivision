@@ -1,8 +1,9 @@
 #include "Rendering.Core/RenderingUtilities.h"
 
 #include <Math.Core/Mesh.h>
+#include <Math.Core/MeshPoint.h>
+#include <Math.Core/MeshTriangle.h>
 #include <Math.Core/Point3D.h>
-#include <Math.Core/Triangle.h>
 #include <Math.Core/Vector3D.h>
 
 #include <QByteArray>
@@ -11,7 +12,7 @@
 #include <Qt3DRender/QGeometry>
 #include <Qt3dRender/QBuffer>
 
-#include <unordered_map>
+#include <map>
 #include <vector>
 
 namespace
@@ -34,7 +35,7 @@ namespace
     }
 
     template<typename TData>
-    void _FillTriangles(const Mesh& i_mesh, QByteArray& i_index_bytes, const std::unordered_map<Point3D*, size_t>& i_point_index_map)
+    void _FillTriangles(const Mesh& i_mesh, QByteArray& i_index_bytes, const std::map<Point3D, size_t>& i_point_index_map)
     {
         Q_ASSERT(i_mesh.GetTrianglesCount() <= std::numeric_limits<TData>::max());
 
@@ -43,7 +44,7 @@ namespace
         for (size_t i = 0; i < i_mesh.GetTrianglesCount(); ++i)
         {
             const auto p_tr = i_mesh.GetTriangle(i);
-
+            //todo: fix this
             Q_ASSERT(i_point_index_map.find(p_tr->GetPoint(0)) != i_point_index_map.end());
             Q_ASSERT(i_point_index_map.find(p_tr->GetPoint(1)) != i_point_index_map.end());
             Q_ASSERT(i_point_index_map.find(p_tr->GetPoint(2)) != i_point_index_map.end());
@@ -75,11 +76,11 @@ namespace Rendering
 
             auto p_raw_data = reinterpret_cast<float*>(buffer_bytes.data());
 
-            std::unordered_map<Point3D*, size_t> point_index_map;
+            std::map<Point3D, size_t> point_index_map;
 
             for (size_t i = 0; i < points_count; ++i)
             {
-                point_index_map[i_mesh.GetPoint(i)] = i;
+                point_index_map[*i_mesh.GetPoint(i)] = i;
 
                 *p_raw_data++ = static_cast<float>(i_mesh.GetPoint(i)->GetX());
                 *p_raw_data++ = static_cast<float>(i_mesh.GetPoint(i)->GetY());

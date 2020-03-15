@@ -2,6 +2,8 @@
 
 #include <QtGlobal>
 
+#include <boost/functional/hash.hpp>
+
 Point3D::Point3D()
 	: Point3D(0., 0., 0.)
 {
@@ -137,6 +139,23 @@ Point3D& Point3D::operator*=(double i_value)
     return *this;
 }
 
+Point3D& Point3D::operator=(const Point3D& i_other)
+{
+    if (this != &i_other)
+        std::memcpy(m_coordinates, i_other.m_coordinates, 3 * sizeof(double));
+
+    return *this;
+}
+
+size_t Point3D::GetHash() const
+{
+    size_t hash = 0;
+    boost::hash_combine(hash, Get(0));
+    boost::hash_combine(hash, Get(1));
+    boost::hash_combine(hash, Get(2));
+    return hash;
+}
+
 ///////////////////////////////////////////////////////////////////
 
 bool ComparePointsXYZ(const Point3D& i_pt1, const Point3D& i_pt2)
@@ -155,4 +174,9 @@ bool ComparePointsZYX(const Point3D& i_pt1, const Point3D& i_pt2)
 	if (i_pt1.Get(1) != i_pt2.Get(1))
 		return i_pt1.Get(1) < i_pt2.Get(1);
 	return i_pt1.Get(0) < i_pt2.Get(0);
+}
+
+size_t hash_value(const Point3D& i_point)
+{
+    return i_point.GetHash();
 }

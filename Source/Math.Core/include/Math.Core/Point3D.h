@@ -11,6 +11,8 @@ class Point3D;
 MATH_CORE_API bool ComparePointsXYZ(const Point3D& i_pt1, const Point3D& i_pt2);
 MATH_CORE_API bool ComparePointsZYX(const Point3D& i_pt1, const Point3D& i_pt2);
 
+MATH_CORE_API size_t hash_value(const Point3D& i_point);
+
 class MATH_CORE_API Point3D 
     : public QObject
     , public boost::addable<Point3D>
@@ -53,6 +55,10 @@ public:
     Point3D& operator+=(const Point3D& i_other);
     Point3D& operator-=(const Point3D& i_other);
     Point3D& operator*=(double i_value);
+
+    Point3D& operator=(const Point3D& i_other);
+
+    size_t GetHash() const;
 
 private:
 	double m_coordinates[3];

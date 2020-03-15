@@ -12,7 +12,7 @@ using namespace ::testing;
 TEST(Distance, PointIsInsideTriangle)
 {
     Point3D triangle_points[3] = { {0, 0, 0}, {2, 0, 0}, {0, 2, 0} };
-    Triangle triangle(&triangle_points[0], &triangle_points[1], &triangle_points[2]);
+    Triangle triangle(triangle_points[0], triangle_points[1], triangle_points[2]);
 
     Point3D point(0.5, 0.5, 0);
 
@@ -22,7 +22,7 @@ TEST(Distance, PointIsInsideTriangle)
 TEST(Distance, ProjectionIsInsideTriangle)
 {
     Point3D triangle_points[3] = { {0, 0, 0}, {2, 0, 0}, {0, 2, 0} };
-    Triangle triangle(&triangle_points[0], &triangle_points[1], &triangle_points[2]);
+    Triangle triangle(triangle_points[0], triangle_points[1], triangle_points[2]);
 
     Point3D point(0.5, 0.5, 3.2514);
 
@@ -32,7 +32,7 @@ TEST(Distance, ProjectionIsInsideTriangle)
 TEST(Distance, PointAndTriangleAreOnSamePlaneAndPerpendicularIsOnEdge)
 {
     Point3D triangle_points[3] = { {0, 0, 0}, {2, 0, 0}, {0, 2, 0} };
-    Triangle triangle(&triangle_points[0], &triangle_points[1], &triangle_points[2]);
+    Triangle triangle(triangle_points[0], triangle_points[1], triangle_points[2]);
 
     Point3D point(2, 2, 0);
 
@@ -42,7 +42,7 @@ TEST(Distance, PointAndTriangleAreOnSamePlaneAndPerpendicularIsOnEdge)
 TEST(Distance, PointAndTriangleAreOnSamePlaneAndPerpendicularIsOnEdge_ShouldNotDependOnEdge)
 {
     Point3D triangle_points[3] = { {0, 0, 0}, {2, 0, 0}, {0, 2, 0} };
-    Triangle triangle(&triangle_points[0], &triangle_points[1], &triangle_points[2]);
+    Triangle triangle(triangle_points[0], triangle_points[1], triangle_points[2]);
 
     Point3D point01(1, -1, 0);
     EXPECT_DOUBLE_EQ(Distance(point01, triangle), 1);
@@ -57,7 +57,7 @@ TEST(Distance, PointAndTriangleAreOnSamePlaneAndPerpendicularIsOnEdge_ShouldNotD
 TEST(Distance, PointAndTriangleAreOnSamePlaneButPerpendicularIsNotOnEdge_ShouldNotDependOnEdge)
 {
     Point3D triangle_points[3] = { {0, 0, 0}, {2, 0, 0}, {0, 2, 0} };
-    Triangle triangle(&triangle_points[0], &triangle_points[1], &triangle_points[2]);
+    Triangle triangle(triangle_points[0], triangle_points[1], triangle_points[2]);
 
     Point3D point_to_0(-1, -1, 0);
     EXPECT_DOUBLE_EQ(Distance(point_to_0, triangle), std::sqrt(2));
@@ -72,7 +72,7 @@ TEST(Distance, PointAndTriangleAreOnSamePlaneButPerpendicularIsNotOnEdge_ShouldN
 TEST(Distance, PointAndTriangleAreNotOnSamePlaneAndPerpendicularIsNotOnEdge)
 {
     Point3D triangle_points[3] = { {0, 0, 0}, {2, 0, 0}, {0, 2, 0} };
-    Triangle triangle(&triangle_points[0], &triangle_points[1], &triangle_points[2]);
+    Triangle triangle(triangle_points[0], triangle_points[1], triangle_points[2]);
 
     Point3D point(4, 4, 4);
 
@@ -82,7 +82,7 @@ TEST(Distance, PointAndTriangleAreNotOnSamePlaneAndPerpendicularIsNotOnEdge)
 TEST(Distance, PointAndTriangleAreNotOnSamePlaneAndPerpendicularIsNotOnEdge_ShouldNotDependOnEdge)
 {
     Point3D triangle_points[3] = { {1, 1, 0}, {3, 3, 0}, {2, 2, 2} };
-    Triangle triangle(&triangle_points[0], &triangle_points[1], &triangle_points[2]);
+    Triangle triangle(triangle_points[0], triangle_points[1], triangle_points[2]);
 
     Point3D point_to_0(0, 0, -1);
     EXPECT_DOUBLE_EQ(Distance(point_to_0, triangle), std::sqrt(3));

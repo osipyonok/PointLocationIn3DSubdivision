@@ -7,6 +7,7 @@
 #include <memory>
 
 class MeshPoint;
+class MeshTriangle;
 class Point3D;
 class Triangle;
 class Vector3D;
@@ -21,14 +22,19 @@ public:
 
     MeshPoint* AddPoint(const Point3D& i_point);
     MeshPoint* AddPoint(double i_x, double i_y, double i_z);
-    Triangle* AddTriangle(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c);
+    MeshTriangle* AddTriangle(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c);
 
 
     MeshPoint* GetPoint(const Point3D& i_point) const;
     MeshPoint* GetPoint(double i_x, double i_y, double i_z) const;
     MeshPoint* GetPoint(size_t i_index) const;
-    Triangle* GetTriangleOriented(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c) const;
-    Triangle* GetTriangle(size_t i_index) const;
+    MeshTriangle* GetTriangleOrientationDependent(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c) const;
+    MeshTriangle* GetTriangleOrientationIndependent(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c) const;
+    MeshTriangle* GetTriangle(size_t i_index) const;
+
+    void RemovePoint(const Point3D& i_point);
+    void RemovePoint(double i_x, double i_y, double i_z);
+    void RemoveTriangle(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c);
 
     size_t GetPointsCount() const;
     size_t GetTrianglesCount() const;
@@ -36,7 +42,6 @@ public:
 private:
     MeshPoint* _AddPoint(double i_x, double i_y, double i_z);
 
-    Triangle* _GetTriangleSpecific(const Point3D* ip_a, const Point3D* ip_b, const Point3D* ip_c) const;
 private:
 	struct Impl;
 	std::unique_ptr<Impl> mp_impl;
