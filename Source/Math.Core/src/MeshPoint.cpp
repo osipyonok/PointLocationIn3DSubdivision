@@ -1,6 +1,6 @@
 #include "Math.Core/MeshPoint.h"
 
-#include "Math.Core/Triangle.h"
+#include "Math.Core/MeshTriangle.h"
 
 #include <QtGlobal>
 
@@ -18,19 +18,19 @@ MeshPoint::MeshPoint(double i_x, double i_y, double i_z)
 {
 }
 
-void MeshPoint::AddTriangle(Triangle* ip_triangle)
+void MeshPoint::AddTriangle(MeshTriangle* ip_triangle)
 {
     Q_ASSERT(m_triangles.find(ip_triangle) == m_triangles.end());
     m_triangles.insert(ip_triangle);
 }
 
-void MeshPoint::RemoveTriangle(Triangle* ip_triangle)
+void MeshPoint::RemoveTriangle(MeshTriangle* ip_triangle)
 {
     Q_ASSERT(m_triangles.find(ip_triangle) != m_triangles.end());
     m_triangles.erase(ip_triangle);
 }
 
-std::vector<Triangle*> MeshPoint::GetTriangles() const
+std::vector<MeshTriangle*> MeshPoint::GetTriangles() const
 {
-    return std::vector<Triangle*>(m_triangles.begin(), m_triangles.end());
+    return std::vector<MeshTriangle*>(m_triangles.begin(), m_triangles.end());
 }

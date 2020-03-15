@@ -6,7 +6,7 @@
 
 #include <unordered_set>
 
-class Triangle;
+class MeshTriangle;
 
 class MATH_CORE_API MeshPoint : public Point3D
 {
@@ -19,10 +19,10 @@ public:
 
     MeshPoint(const MeshPoint& i_other) = delete;
 
-    void AddTriangle(Triangle* ip_triangle);
-    void RemoveTriangle(Triangle* ip_triangle);
-    std::vector<Triangle*> GetTriangles() const;
+    void AddTriangle(MeshTriangle* ip_triangle);
+    void RemoveTriangle(MeshTriangle* ip_triangle);
+    std::vector<MeshTriangle*> GetTriangles() const;
 
 private:
-    std::unordered_set<Triangle*> m_triangles;
+    std::unordered_set<MeshTriangle*> m_triangles;
 };

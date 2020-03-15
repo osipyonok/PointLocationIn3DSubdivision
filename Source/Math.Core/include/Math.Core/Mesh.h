@@ -40,9 +40,6 @@ public:
     size_t GetTrianglesCount() const;
 
 private:
-    MeshPoint* _AddPoint(double i_x, double i_y, double i_z);
-
-private:
 	struct Impl;
 	std::unique_ptr<Impl> mp_impl;
 };

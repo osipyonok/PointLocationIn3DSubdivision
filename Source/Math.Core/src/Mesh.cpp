@@ -120,6 +120,41 @@ namespace
         TriangleContainerData m_data;
     };
 
+    struct PointContainer
+    {
+        MeshPoint* AddPoint(const Point3D& i_point);
+        MeshPoint* GetPoint(const Point3D& i_point) const;
+        bool ContainsPoint(const Point3D& i_point) const;
+        void RemovePoint(const Point3D& i_point);
+
+        size_t GetPointsCount() const;
+        MeshPoint* GetPointAt(size_t index) const;
+
+    private:
+        struct PointTag;
+
+        struct PointExtractor
+        {
+            using result_type = const Point3D&;
+
+            result_type operator()(const std::unique_ptr<MeshPoint>& ip_point) const
+            {
+                Q_ASSERT(ip_point);
+                return *ip_point;
+            }
+        };
+
+        using PointContainerData = multi_index_container<
+            std::unique_ptr<MeshPoint>,
+            indexed_by<
+                random_access<>,
+                hashed_unique<tag<PointTag>, PointExtractor>
+            >
+        >;
+
+        PointContainerData m_data;
+    };
+
     MeshTriangle* TriangleContainer::AddTriangle(const Triangle& i_triangle)
     {
         auto p_triangle = std::make_unique<MeshTriangle>(i_triangle.GetPoint(0), i_triangle.GetPoint(1), i_triangle.GetPoint(2));
@@ -216,17 +251,51 @@ namespace
         for (auto p_triangle : triangles)
             RemoveTriangle(*p_triangle);
     }
+
+    MeshPoint* PointContainer::AddPoint(const Point3D& i_point)
+    {
+        auto p_point = std::make_unique<MeshPoint>(i_point.GetX(), i_point.GetY(), i_point.GetZ());
+        auto p_point_raw = p_point.get();
+        m_data.insert(m_data.end(), std::move(p_point));
+        return p_point_raw;
+    }
+
+    MeshPoint* PointContainer::GetPoint(const Point3D& i_point) const
+    {
+        auto it = m_data.get<PointTag>().find(i_point);
+        return it != m_data.get<PointTag>().end() ? it->get() : nullptr;
+    }
+
+    bool PointContainer::ContainsPoint(const Point3D& i_point) const
+    {
+        return GetPoint(i_point);
+    }
+
+    void PointContainer::RemovePoint(const Point3D& i_point)
+    {
+        m_data.get<PointTag>().erase(i_point);
+    }
+
+    size_t PointContainer::GetPointsCount() const
+    {
+        return m_data.size();
+    }
+
+    MeshPoint* PointContainer::GetPointAt(size_t index) const
+    {
+        return m_data[index].get();
+    }
 }
 
 struct Mesh::Impl
 {
-    std::vector<std::unique_ptr<MeshPoint>> m_points;
+    PointContainer m_points;
     TriangleContainer m_triangles;
 };
 
 
 Mesh::Mesh()
-	: mp_impl(std::make_unique<Impl>())
+    : mp_impl(std::make_unique<Impl>())
 {
 }
 
@@ -237,15 +306,12 @@ MeshPoint* Mesh::AddPoint(const Point3D& i_point)
     if (auto p_point = GetPoint(i_point))
         return p_point;
 
-    return _AddPoint(i_point.GetX(), i_point.GetY(), i_point.GetZ());
+    return mp_impl->m_points.AddPoint(i_point);
 }
 
 MeshPoint* Mesh::AddPoint(double i_x, double i_y, double i_z)
 {
-    if (auto p_point = GetPoint(i_x, i_y, i_z))
-        return p_point;
-
-    return _AddPoint(i_x, i_y, i_z);
+    return AddPoint({ i_x, i_y, i_z });
 }
 
 MeshTriangle* Mesh::AddTriangle(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c)
@@ -258,17 +324,17 @@ MeshTriangle* Mesh::AddTriangle(const Point3D& i_a, const Point3D& i_b, const Po
     Q_ASSERT(p_pnt2);
     Q_ASSERT(p_pnt3);
 
-    return mp_impl->m_triangles.AddTriangle(Triangle{ *p_pnt1, *p_pnt2, *p_pnt3 });
+    auto p_triangle = mp_impl->m_triangles.AddTriangle(Triangle{ *p_pnt1, *p_pnt2, *p_pnt3 });
+    p_pnt1->AddTriangle(p_triangle);
+    p_pnt2->AddTriangle(p_triangle);
+    p_pnt3->AddTriangle(p_triangle);
+
+    return p_triangle;
 }
 
 MeshPoint* Mesh::GetPoint(const Point3D& i_point) const
 {
-    for (const auto& p_point : mp_impl->m_points)
-    {
-        if (*p_point == i_point)
-            return p_point.get();
-    }
-    return nullptr;
+    return mp_impl->m_points.GetPoint(i_point);
 }
 
 MeshPoint* Mesh::GetPoint(double i_x, double i_y, double i_z) const
@@ -279,7 +345,7 @@ MeshPoint* Mesh::GetPoint(double i_x, double i_y, double i_z) const
 MeshPoint* Mesh::GetPoint(size_t i_index) const
 {
     Q_ASSERT(i_index >= 0 && i_index < GetPointsCount());
-    return mp_impl->m_points[i_index].get();
+    return mp_impl->m_points.GetPointAt(i_index);
 }
 
 MeshTriangle* Mesh::GetTriangleOrientationDependent(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c) const
@@ -303,7 +369,7 @@ MeshTriangle* Mesh::GetTriangle(size_t i_index) const
 void Mesh::RemovePoint(const Point3D& i_point)
 {
     mp_impl->m_triangles.RemoveTrianglesWithVertex(i_point);
-    // todo: remove point from list
+    mp_impl->m_points.RemovePoint(i_point);
 }
 
 void Mesh::RemovePoint(double i_x, double i_y, double i_z)
@@ -313,21 +379,21 @@ void Mesh::RemovePoint(double i_x, double i_y, double i_z)
 
 void Mesh::RemoveTriangle(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c)
 {
+    auto p_triangle = GetTriangleOrientationDependent(i_a, i_b, i_c );
+
+    GetPoint(i_a)->RemoveTriangle(p_triangle);
+    GetPoint(i_b)->RemoveTriangle(p_triangle);
+    GetPoint(i_c)->RemoveTriangle(p_triangle);
+
     mp_impl->m_triangles.RemoveTriangle({ i_a, i_b, i_c });
 }
 
 size_t Mesh::GetPointsCount() const
 {
-    return mp_impl->m_points.size();
+    return mp_impl->m_points.GetPointsCount();
 }
 
 size_t Mesh::GetTrianglesCount() const
 {
     return mp_impl->m_triangles.GetTrianglesCount();
-}
-
-MeshPoint* Mesh::_AddPoint(double i_x, double i_y, double i_z)
-{
-    mp_impl->m_points.emplace_back(std::make_unique<MeshPoint>(i_x, i_y, i_z));
-    return mp_impl->m_points.back().get();
 }
