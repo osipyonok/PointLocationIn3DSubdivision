@@ -9,6 +9,8 @@
 
 #include <Math.Algos/Sqrt3Subdivision.h>
 
+#include <Math.IO/MeshIO.h>
+
 #include <Rendering.Core/RenderableMesh.h>
 
 #include <Rendering.Main/RenderablesController.h>
@@ -33,6 +35,10 @@ int main(int argc, char* argv[])
 	*/
 
     Mesh mesh;
+
+    auto result = ReadMesh("C:/3dData/mesh/bunny.obj", mesh);
+    Q_ASSERT(result);
+
     /*
     auto point0 = mesh.AddPoint(0, 0, 0);
     auto point1 = mesh.AddPoint(2, 0, 0);
@@ -46,7 +52,7 @@ int main(int argc, char* argv[])
     mesh.AddTriangle(*point3, *point0, *point4)->GetNormal();
     */
 
-    
+    /*
     auto p_p0 = mesh.AddPoint({ 0, 0, 0 });
     auto p_p1 = mesh.AddPoint({ 1, 0, 0 });
     auto p_p2 = mesh.AddPoint({ 0, 0, 1 });
@@ -56,12 +62,14 @@ int main(int argc, char* argv[])
     mesh.AddTriangle(*p_p3, *p_p2, *p_p0);// left
     mesh.AddTriangle(*p_p1, *p_p2, *p_p3);// right
     mesh.AddTriangle(*p_p0, *p_p1, *p_p3);// bottom
-    
+    */
+
 
    SQRT3MeshSubdivider subdivider;
-   subdivider.SetParams({ 0.1 });
+   subdivider.SetParams({ 0.001 });
    subdivider.Subdivide(mesh);
 
+   /*
    for (size_t i = 0; i < mesh.GetTrianglesCount(); ++i)
    {
        auto tr = mesh.GetTriangle(i);
@@ -72,6 +80,7 @@ int main(int argc, char* argv[])
        qDebug() << "Segment " << tr->GetPoint(2).GetX() << " " << tr->GetPoint(2).GetY()
                        << " " << tr->GetPoint(0).GetX() << " " << tr->GetPoint(0).GetY();
    }
+   */
 
 
     auto p_window = new UI::MainWindow3D;

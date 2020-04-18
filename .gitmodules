@@ -6,3 +6,6 @@
     path = ThirdParty/gtest
     url = https://github.com/google/googletest.git
     ignore = all
+[submodule "ThirdParty/OBJ-Loader"]
+	path = ThirdParty/OBJ-Loader
+	url = https://github.com/Bly7/OBJ-Loader.git
