@@ -1,0 +1,291 @@
+From da3552be172f1d77ee91dbf8a4e9dcc232908b3b Mon Sep 17 00:00:00 2001
+From: Max Osipyonok <perepishka@mail.ru>
+Date: Sat, 18 Apr 2020 22:47:26 +0300
+Subject: [PATCH] Added cmakelists to stlloader
+
+---
+ CMakeLists.txt                                |   8 ++
+ Makefile                                      |  12 ---
+ README.md                                     |  21 -----
+ stlloader.h => include/stlloader.h            |   0
+ samples/bad_cube_binary_with_solid_header.stl | Bin 684 -> 0 bytes
+ samples/cube_ascii.stl                        |  86 ------------------
+ samples/cube_binary.stl                       | Bin 684 -> 0 bytes
+ samples/triangle_ascii.stl                    |   9 --
+ stlcopy.cpp                                   |  32 -------
+ stldump.cpp                                   |  16 ----
+ 10 files changed, 8 insertions(+), 176 deletions(-)
+ create mode 100644 CMakeLists.txt
+ delete mode 100644 Makefile
+ delete mode 100644 README.md
+ rename stlloader.h => include/stlloader.h (100%)
+ delete mode 100644 samples/bad_cube_binary_with_solid_header.stl
+ delete mode 100644 samples/cube_ascii.stl
+ delete mode 100644 samples/cube_binary.stl
+ delete mode 100644 samples/triangle_ascii.stl
+ delete mode 100644 stlcopy.cpp
+ delete mode 100644 stldump.cpp
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+new file mode 100644
+index 0000000..c9d8e78
+--- /dev/null
++++ b/CMakeLists.txt
+@@ -0,0 +1,8 @@
++project("stlloader" LANGUAGES CXX)
++
++set(CMAKE_CXX_STANDARD 14)
++set(CMAKE_CXX_STANDARD_REQUIRED ON)
++	
++add_library("stlloader" INTERFACE)
++
++target_include_directories("stlloader" INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+diff --git a/Makefile b/Makefile
+deleted file mode 100644
+index 2052b6b..0000000
+--- a/Makefile
++++ /dev/null
+@@ -1,12 +0,0 @@
+-
+-all: stldump stlcopy
+-
+-stldump: stldump.cpp stlloader.h
+-	$(CXX) stldump.cpp -o stldump -std=c++11 -g
+-
+-stlcopy: stlcopy.cpp stlloader.h
+-	$(CXX) stlcopy.cpp -o stlcopy -std=c++11 -g
+-
+-clean:
+-	rm -f stldump stlcopy
+-
+diff --git a/README.md b/README.md
+deleted file mode 100644
+index 74c0c51..0000000
+--- a/README.md
++++ /dev/null
+@@ -1,21 +0,0 @@
+-# stlloader
+-Simple loader for STL 3D model files
+-
+-This is a C++ header-only library. To use it, #include "stlloader.h" wherever you intend to use
+-the library. You must #define STLLOADER_IMPLEMENTATION before including it in one of your files
+-for the implementation to be defined for the linker.
+-
+-Expand the implementation for the linker in one of your files:
+-```
+-#define STLLOADER_IMPLEMENTATION
+-#include "stlloader.h"
+-```
+-
+-Otherwise, just include the header and call the functions:
+-```
+-#include "stlloader.h"
+-[...]
+-    stlloader::Mesh mesh;
+-    stlloader::parse_file(filename, mesh);
+-    stlloader::print(mesh);
+-```
+diff --git a/stlloader.h b/include/stlloader.h
+similarity index 100%
+rename from stlloader.h
+rename to include/stlloader.h
+diff --git a/samples/bad_cube_binary_with_solid_header.stl b/samples/bad_cube_binary_with_solid_header.stl
+deleted file mode 100644
+index 5e4d7ed37a51a6620357f0e422ea293ae5f7dbf3..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 684
+zcmb7>O>V+45QQIs?zlsJ2fWW!`0FB41X7_3R>=)|1#ZBCWF0P5RYC&yjf2ZeceP~M
+z@yz$$%w)GMi?v&R?A>O&ckgeDvOKuOZdDZVaanBeuQg@%2srmp-2rtTLY4E3_s7|d
+z_<akNy>XM6B|;-tW{jzj=%>;>REfwZ%=qp-%q#iiBs)_eO@-&G2azw5FOTX}$?}bJ
+zEu)Ryle=aqod_U=lOINYdx+H}B_IP@>u!uo^su{arT_ME;dCtv(1^~BaaP_d#j3gt
+ywWn93SxW2NdV&-7xA59%ME{2>0Tax<xn?+eosYexZj}b^;WHBErV;fUD*XVm-`c|f
+
+diff --git a/samples/cube_ascii.stl b/samples/cube_ascii.stl
+deleted file mode 100644
+index 107e907..0000000
+--- a/samples/cube_ascii.stl
++++ /dev/null
+@@ -1,86 +0,0 @@
+-solid Exported from Blender-2.78 (sub 0)
+-facet normal -0.000000 0.000000 -1.000000
+-outer loop
+-vertex 1.000000 1.000000 -1.000000
+-vertex 1.000000 -1.000000 -1.000000
+-vertex -1.000000 -1.000000 -1.000000
+-endloop
+-endfacet
+-facet normal 0.000000 0.000000 -1.000000
+-outer loop
+-vertex -1.000000 -1.000000 -1.000000
+-vertex -1.000000 1.000000 -1.000000
+-vertex 1.000000 1.000000 -1.000000
+-endloop
+-endfacet
+-facet normal 0.000000 0.000000 1.000000
+-outer loop
+-vertex 1.000000 0.999999 1.000000
+-vertex -1.000000 1.000000 1.000000
+-vertex -1.000000 -1.000000 1.000000
+-endloop
+-endfacet
+-facet normal 0.000000 0.000000 1.000000
+-outer loop
+-vertex -1.000000 -1.000000 1.000000
+-vertex 0.999999 -1.000001 1.000000
+-vertex 1.000000 0.999999 1.000000
+-endloop
+-endfacet
+-facet normal 1.000000 -0.000001 -0.000000
+-outer loop
+-vertex 1.000000 1.000000 -1.000000
+-vertex 1.000000 0.999999 1.000000
+-vertex 0.999999 -1.000001 1.000000
+-endloop
+-endfacet
+-facet normal 1.000000 0.000000 0.000000
+-outer loop
+-vertex 0.999999 -1.000001 1.000000
+-vertex 1.000000 -1.000000 -1.000000
+-vertex 1.000000 1.000000 -1.000000
+-endloop
+-endfacet
+-facet normal -0.000000 -1.000000 -0.000000
+-outer loop
+-vertex 1.000000 -1.000000 -1.000000
+-vertex 0.999999 -1.000001 1.000000
+-vertex -1.000000 -1.000000 1.000000
+-endloop
+-endfacet
+-facet normal -0.000000 -1.000000 0.000000
+-outer loop
+-vertex -1.000000 -1.000000 1.000000
+-vertex -1.000000 -1.000000 -1.000000
+-vertex 1.000000 -1.000000 -1.000000
+-endloop
+-endfacet
+-facet normal -1.000000 0.000000 -0.000000
+-outer loop
+-vertex -1.000000 -1.000000 -1.000000
+-vertex -1.000000 -1.000000 1.000000
+-vertex -1.000000 1.000000 1.000000
+-endloop
+-endfacet
+-facet normal -1.000000 0.000000 -0.000000
+-outer loop
+-vertex -1.000000 1.000000 1.000000
+-vertex -1.000000 1.000000 -1.000000
+-vertex -1.000000 -1.000000 -1.000000
+-endloop
+-endfacet
+-facet normal 0.000000 1.000000 0.000000
+-outer loop
+-vertex 1.000000 0.999999 1.000000
+-vertex 1.000000 1.000000 -1.000000
+-vertex -1.000000 1.000000 -1.000000
+-endloop
+-endfacet
+-facet normal 0.000000 1.000000 0.000000
+-outer loop
+-vertex -1.000000 1.000000 -1.000000
+-vertex -1.000000 1.000000 1.000000
+-vertex 1.000000 0.999999 1.000000
+-endloop
+-endfacet
+-endsolid Exported from Blender-2.78 (sub 0)
+diff --git a/samples/cube_binary.stl b/samples/cube_binary.stl
+deleted file mode 100644
+index 7df90ed8325120fd823d431096740f1db1ca9d6a..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 684
+zcmb7>K~BRk5Ji8}cE=s?5*Ad5T7q39B<_Jw!wM)$L1LHOpjYS(SdgyMOCcnr*8Fj5
+z`oj)OmL1Q$|7RvQZ_o4crI@+<a{lP9ABv}0QJ!5)F0b6l;`Pp*pW<KZh}i?+ql4-e
+zsPho2oM*i6&vwA?ZK&*xo5VB`8u@0%kP3-DDD6U(h<wD1ug=4~l21;uH3iaCIIOxC
+z`6M~sSEovrZ=72*+Son0YnIZ9077{8{m5?*v6`d=WWd_G8)6eZ>~34>zkO^tUCRPA
+zqH|-Mm3K<9sy0LI>D6eK(mJ<};Dr4)95))#|Dj622)Eu`GpxMM$KF!6N&~yFjD)#q
+IME&|oKfVgtH~;_u
+
+diff --git a/samples/triangle_ascii.stl b/samples/triangle_ascii.stl
+deleted file mode 100644
+index 49cd445..0000000
+--- a/samples/triangle_ascii.stl
++++ /dev/null
+@@ -1,9 +0,0 @@
+-solid testTriangle
+-  facet normal 0.0 0.0 1.0 
+-    outer loop 
+-      vertex 1.0 1.0 0.0 
+-      vertex -1.0 1.0 0.0 
+-      vertex 0.0 -1.0 0.0 
+-    endloop 
+-  endfacet 
+-endsolid
+\ No newline at end of file
+diff --git a/stlcopy.cpp b/stlcopy.cpp
+deleted file mode 100644
+index 9d6318a..0000000
+--- a/stlcopy.cpp
++++ /dev/null
+@@ -1,32 +0,0 @@
+-#define STLLOADER_IMPLEMENTATION
+-#include "stlloader.h"
+-
+-int main(int argc, char ** argv)
+-{
+-    if(argc < 2) {
+-        std::cerr << "Please supply an input file\n";
+-        return EXIT_FAILURE;
+-    }
+-    if(argc < 3) {
+-        std::cerr << "Please supply an output file\n";
+-        return EXIT_FAILURE;
+-    }
+-
+-    stlloader::Format format = stlloader::Format::ascii;
+-    if(argc > 3) {
+-        std::string format_arg(argv[3]);
+-        if(format_arg == "binary") format = stlloader::Format::binary;
+-        else if(format_arg == "ascii") format = stlloader::Format::ascii;
+-        else {
+-            std::cerr << "Unexpected output format: " << format_arg << '\n';
+-            return EXIT_FAILURE;
+-        }
+-    }
+-
+-    stlloader::Mesh mesh;
+-    stlloader::parse_file(argv[1], mesh);
+-    stlloader::write_file(argv[2], mesh, format);
+-
+-    return EXIT_SUCCESS;
+-}
+-
+diff --git a/stldump.cpp b/stldump.cpp
+deleted file mode 100644
+index cebade0..0000000
+--- a/stldump.cpp
++++ /dev/null
+@@ -1,16 +0,0 @@
+-#define STLLOADER_IMPLEMENTATION
+-#include "stlloader.h"
+-
+-int main(int argc, char ** argv)
+-{
+-    if(argc < 2) {
+-        std::cerr << "Please supply an argument\n";
+-        return EXIT_FAILURE;
+-    }
+-    stlloader::Mesh mesh;
+-    stlloader::parse_file(argv[1], mesh);
+-    stlloader::print(mesh);
+-
+-    return EXIT_SUCCESS;
+-}
+-
+-- 
+2.23.0.windows.1
+
