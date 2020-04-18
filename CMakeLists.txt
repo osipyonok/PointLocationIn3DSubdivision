@@ -23,6 +23,11 @@ if(PatchFolders)
         file(GLOB Patches "${PatchFolder}/*.patch")
         get_filename_component(ThirdPartyFolder ${PatchFolder} NAME)
         set(PathToBePatched "ThirdParty/${ThirdPartyFolder}")
+        execute_process(
+                        COMMAND "${GIT_EXECUTABLE}" "submodule" "update" "--progress" "--init" "--" "ThirdParty/${ThirdPartyFolder}"
+                        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+                        OUTPUT_QUIET
+                        ERROR_QUIET)
         foreach(Patch ${Patches})
             message(STATUS "Applying patch ${Patch}")
             #abort previous failed patch application (if any)

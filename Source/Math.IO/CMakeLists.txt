@@ -30,7 +30,6 @@ target_link_libraries(${ProjectName}
 					  Math.Core
 					  
 					  #3rdParty
-					  PRIVATE
 					  OBJ-Loader
 					  stlloader
 					  )
