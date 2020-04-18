@@ -7,5 +7,10 @@
     url = https://github.com/google/googletest.git
     ignore = all
 [submodule "ThirdParty/OBJ-Loader"]
-	path = ThirdParty/OBJ-Loader
-	url = https://github.com/Bly7/OBJ-Loader.git
+    path = ThirdParty/OBJ-Loader
+    url = https://github.com/Bly7/OBJ-Loader.git
+    ignore = all
+[submodule "ThirdParty/stlloader"]
+    path = ThirdParty/stlloader
+    url = https://github.com/dacunni/stlloader.git
+    ignore = all
