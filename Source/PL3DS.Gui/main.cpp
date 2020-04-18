@@ -36,8 +36,9 @@ int main(int argc, char* argv[])
 
     Mesh mesh;
 
-    auto result = ReadMesh("C:/3dData/mesh/bunny.obj", mesh);
+    auto result = ReadMesh("C:/3dData/mesh/bunny.stl", mesh);
     Q_ASSERT(result);
+
 
     /*
     auto point0 = mesh.AddPoint(0, 0, 0);

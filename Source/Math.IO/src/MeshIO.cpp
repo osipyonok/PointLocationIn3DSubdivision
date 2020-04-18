@@ -2,11 +2,13 @@
 
 #include <Math.Core/Mesh.h>
 #include <Math.Core/MeshPoint.h>
+#include <Math.Core/MeshTriangle.h>
 #include <Math.Core/Point3D.h>
 #include <Math.Core/Triangle.h>
 #include <Math.Core/Vector3D.h>
 
 #include <QDebug>
+#include <QDir>
 #include <QFileInfo>
 
 #include <vector>
@@ -116,6 +118,54 @@ namespace
 
         return false;
     }
+
+    bool _WriteStl(const QString& i_dest, const Mesh& i_mesh)
+    {
+        try
+        {
+            stlloader::Mesh stl;
+            stl.name = "PL3DS_STL";
+            
+            for (size_t i = 0; i < i_mesh.GetTrianglesCount(); ++i)
+            {
+                auto triangle = i_mesh.GetTriangle(i);
+                
+                stlloader::Facet facet;
+
+                facet.vertices[0].x = static_cast<float>(triangle->GetPoint(0).GetX());
+                facet.vertices[0].y = static_cast<float>(triangle->GetPoint(0).GetY());
+                facet.vertices[0].z = static_cast<float>(triangle->GetPoint(0).GetZ());
+
+                facet.vertices[1].x = static_cast<float>(triangle->GetPoint(1).GetX());
+                facet.vertices[1].y = static_cast<float>(triangle->GetPoint(1).GetY());
+                facet.vertices[1].z = static_cast<float>(triangle->GetPoint(1).GetZ());
+
+                facet.vertices[2].x = static_cast<float>(triangle->GetPoint(2).GetX());
+                facet.vertices[2].y = static_cast<float>(triangle->GetPoint(2).GetY());
+                facet.vertices[2].z = static_cast<float>(triangle->GetPoint(2).GetZ());
+
+                auto normal = triangle->GetNormal();
+                facet.normal.x = static_cast<float>(normal.GetX());
+                facet.normal.y = static_cast<float>(normal.GetY());
+                facet.normal.z = static_cast<float>(normal.GetZ());
+
+                stl.facets.emplace_back(facet);
+            }
+
+            stlloader::write_file(i_dest.toStdString().c_str(), stl, stlloader::Format::binary);
+            return true;
+        }
+        catch (std::exception& e)
+        {
+            qDebug() << e.what();
+        }
+        catch (...)
+        {
+            qDebug() << "Unknown exception was thrown by 3rd party parser.";
+        }
+
+        return false;
+    }
 }
 
 bool ReadMesh(const QString& i_src, Mesh& o_mesh)
@@ -136,4 +186,16 @@ bool ReadMesh(const QString& i_src, Mesh& o_mesh)
     }
 
     return false;
+}
+
+ bool WriteMesh(const QString& i_dest, const Mesh& i_mesh)
+{
+     QFileInfo file_info(i_dest);
+     if (file_info.completeSuffix().toLower() != QStringLiteral("stl"))
+     {
+         qDebug() << "Only stl files are supported by this function";
+         file_info.setFile(i_dest + QDir::separator() + QStringLiteral(".stl"));
+     }
+
+     return _WriteStl(file_info.absoluteFilePath(), i_mesh);
 }
