@@ -5,6 +5,7 @@
 #include <QObject>
 
 #include <memory>
+#include <vector>
 
 class MeshPoint;
 class MeshTriangle;
@@ -31,6 +32,9 @@ public:
     MeshTriangle* GetTriangleOrientationDependent(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c) const;
     MeshTriangle* GetTriangleOrientationIndependent(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c) const;
     MeshTriangle* GetTriangle(size_t i_index) const;
+
+    std::vector<MeshTriangle*> GetTrianglesIncidentToEdge(const Point3D& i_a, const Point3D& i_b) const;
+    std::vector<MeshTriangle*> GetTrianglesIncidentToPoint(const Point3D& i_point) const;
 
     void RemovePoint(const Point3D& i_point);
     void RemovePoint(double i_x, double i_y, double i_z);

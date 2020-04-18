@@ -48,6 +48,8 @@ namespace
         void RemoveTriangle(const Triangle& i_triangle);
         void RemoveTrianglesWithVertex(const Point3D& i_point);
 
+        std::vector<MeshTriangle*> GetTrianglesIncidentToEdge(const Point3D& i_first_point, const Point3D& i_second_point) const;
+
         size_t GetTrianglesCount() const;
         MeshTriangle* GetTriangleAt(size_t i_index) const;
 
@@ -98,6 +100,9 @@ namespace
 
         template<EdgeNumber edge_number> // other triangle's edge number
         void _AddNeighbours(MeshTriangle& i_new_triangle);
+
+        template<EdgeNumber edge_number>
+        std::vector<MeshTriangle*> _GetTrianglesWithNonOrientedEdge(const Point3D& i_first_point, const Point3D& i_second_point) const;
 
         template<Coordinate coordinate> 
         void _RemoveTrianglesWithVertex(const Point3D& i_point);
@@ -204,6 +209,22 @@ namespace
         _RemoveTrianglesWithVertex<Coordinate::Z>(i_point);
     }
 
+    std::vector<MeshTriangle*> TriangleContainer::GetTrianglesIncidentToEdge(const Point3D& i_first_point, const Point3D& i_second_point) const
+    {
+        auto by_first_edge  = _GetTrianglesWithNonOrientedEdge<EdgeNumber::First>(i_first_point, i_second_point);
+        auto by_second_edge = _GetTrianglesWithNonOrientedEdge<EdgeNumber::Second>(i_first_point, i_second_point);
+        auto by_third_edge  = _GetTrianglesWithNonOrientedEdge<EdgeNumber::Third>(i_first_point, i_second_point);
+
+        std::vector<MeshTriangle*> triangles;
+        triangles.reserve(by_first_edge.size() + by_second_edge.size() + by_third_edge.size());
+
+        std::copy(by_first_edge.begin(), by_first_edge.end(), std::back_inserter(triangles));
+        std::copy(by_second_edge.begin(), by_second_edge.end(), std::back_inserter(triangles));
+        std::copy(by_third_edge.begin(), by_third_edge.end(), std::back_inserter(triangles));
+
+        return std::move(triangles);
+    }
+
     size_t TriangleContainer::GetTrianglesCount() const
     {
         return m_data.size();
@@ -238,6 +259,18 @@ namespace
                 });
             }
         }
+    }
+
+    template<TriangleContainer::EdgeNumber edge_number>
+    std::vector<MeshTriangle*> TriangleContainer::_GetTrianglesWithNonOrientedEdge(const Point3D& i_first_point, const Point3D& i_second_point) const
+    {
+        auto range = m_data.get<NonOrientedEdgeTag<edge_number>>().equal_range(Edge{ i_first_point, i_second_point });
+        std::vector<MeshTriangle*> triangles;
+        for (auto it = range.first; it != range.second; ++it)
+        {
+            triangles.push_back(it->get());
+        }
+        return std::move(triangles);
     }
 
     template<TriangleContainer::Coordinate coordinate>
@@ -364,6 +397,17 @@ MeshTriangle* Mesh::GetTriangle(size_t i_index) const
 {
     Q_ASSERT(i_index >= 0 && i_index < GetTrianglesCount());
     return mp_impl->m_triangles.GetTriangleAt(i_index);
+}
+
+std::vector<MeshTriangle*> Mesh::GetTrianglesIncidentToEdge(const Point3D& i_a, const Point3D& i_b) const
+{
+    return mp_impl->m_triangles.GetTrianglesIncidentToEdge(i_a, i_b);
+}
+
+std::vector<MeshTriangle*> Mesh::GetTrianglesIncidentToPoint(const Point3D& i_point) const
+{
+    auto p_point = GetPoint(i_point);
+    return p_point ? p_point->GetTriangles() : std::vector<MeshTriangle*>{};
 }
 
 void Mesh::RemovePoint(const Point3D& i_point)

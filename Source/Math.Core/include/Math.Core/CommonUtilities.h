@@ -8,5 +8,7 @@ class Triangle;
 
 #define EPSILON (0.000000059604644775390625) // = 1/2^-24
 
+MATH_CORE_API double DistanceSqr(const Point3D& i_point1, const Point3D& i_point2);
+
 MATH_CORE_API double Distance(const Point3D& i_point, const BoundingBox& i_bbox);
 MATH_CORE_API double Distance(const Point3D& i_point, const Triangle& i_triangle);

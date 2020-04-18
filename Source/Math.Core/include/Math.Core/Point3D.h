@@ -20,6 +20,7 @@ class MATH_CORE_API Point3D
     , public boost::less_than_comparable<Point3D>
     , public boost::equality_comparable<Point3D>
     , public boost::multipliable2<Point3D, double>
+    , public boost::dividable2<Point3D, double>
 {
 	Q_OBJECT
 
@@ -55,6 +56,8 @@ public:
     Point3D& operator+=(const Point3D& i_other);
     Point3D& operator-=(const Point3D& i_other);
     Point3D& operator*=(double i_value);
+
+    Point3D& operator/=(double i_value);
 
     Point3D& operator=(const Point3D& i_other);
 

@@ -69,10 +69,10 @@ void MeshTriangle::RemoveNeighbour(short i_index)
 
 void MeshTriangle::RemoveNeighbour(const Triangle& i_neighbour)
 {
-    if (*m_neighbours[0] == i_neighbour)
+    if (m_neighbours[0]  && *m_neighbours[0] == i_neighbour)
         RemoveNeighbour(0);
-    if (*m_neighbours[1] == i_neighbour)
+    if (m_neighbours[1] && *m_neighbours[1] == i_neighbour)
         RemoveNeighbour(1);
-    if (*m_neighbours[2] == i_neighbour)
+    if (m_neighbours[2] && *m_neighbours[2] == i_neighbour)
         RemoveNeighbour(2);
 }

@@ -49,6 +49,7 @@ target_link_libraries(${ProjectName}
 
                       #Internal
                       Math.Core
+                      Math.Algos
                       Rendering.Core
                       Rendering.Main
 

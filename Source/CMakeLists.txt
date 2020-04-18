@@ -1,3 +1,4 @@
+add_subdirectory(Math.Algos)
 add_subdirectory(Math.Core)
 add_subdirectory(Math.DataStructures)
 add_subdirectory(PL3DS.Gui)

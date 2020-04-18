@@ -139,6 +139,15 @@ Point3D& Point3D::operator*=(double i_value)
     return *this;
 }
 
+Point3D& Point3D::operator/=(double i_value)
+{
+    Q_ASSERT(i_value != 0);
+    Get(0) /= i_value;
+    Get(1) /= i_value;
+    Get(2) /= i_value;
+    return *this;
+}
+
 Point3D& Point3D::operator=(const Point3D& i_other)
 {
     if (this != &i_other)

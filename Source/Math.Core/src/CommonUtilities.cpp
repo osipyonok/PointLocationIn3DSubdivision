@@ -11,6 +11,12 @@
 #include <utility>
 
 
+double DistanceSqr(const Point3D& i_point1, const Point3D& i_point2)
+{
+    const auto tmp = i_point1 - i_point2;
+    return tmp.Get(0) * tmp.Get(0) + tmp.Get(1) * tmp.Get(1) + tmp.Get(2) * tmp.Get(2);
+}
+
 double Distance(const Point3D& i_point, const BoundingBox& i_bbox)
 {
     if (i_bbox.ContainsPoint(i_point))
