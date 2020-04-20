@@ -2,6 +2,8 @@
 
 #include "Math.Core/Point3D.h"
 
+#include <QtGlobal>
+
 namespace
 {
     bool _IsNeighbourAt(const Triangle& i_triangle, const Triangle& i_neighbour_candidate, short i_index)
@@ -33,31 +35,31 @@ MeshTriangle::MeshTriangle(const Point3D& i_point1, const Point3D& i_point2, con
 
 MeshTriangle::~MeshTriangle() = default;
 
-void MeshTriangle::SetNeighbour(const Triangle& i_neighbour)
+void MeshTriangle::SetNeighbour(TriangleHandle i_neighbour)
 {
-    if (_IsNeighbourAt(*this, i_neighbour, 0))
+    if (_IsNeighbourAt(*this, *i_neighbour.lock(), 0))
         SetNeighbour(i_neighbour, 0);
-    else if (_IsNeighbourAt(*this, i_neighbour, 1))
+    else if (_IsNeighbourAt(*this, *i_neighbour.lock(), 1))
         SetNeighbour(i_neighbour, 1);
-    else if (_IsNeighbourAt(*this, i_neighbour, 2))
+    else if (_IsNeighbourAt(*this, *i_neighbour.lock(), 2))
         SetNeighbour(i_neighbour, 2);
     else
         Q_ASSERT_X(false, "MeshTriangle::SetNeighbour", "Given triangle is not a neighbour!");
 }
 
-void MeshTriangle::SetNeighbour(const Triangle& i_neighbour, short i_index)
+void MeshTriangle::SetNeighbour(TriangleHandle i_neighbour, short i_index)
 {
     Q_ASSERT(i_index >= 0 && i_index < 3);
-    Q_ASSERT(_IsNeighbourAt(*this, i_neighbour, i_index));
+    Q_ASSERT(_IsNeighbourAt(*this, *i_neighbour.lock(), i_index));
 
-    m_neighbours[i_index] = std::make_unique<Triangle>(i_neighbour);
+    m_neighbours[i_index] = i_neighbour;
 }
 
-boost::optional<Triangle> MeshTriangle::GetNeighbour(short i_index) const
+TriangleHandle MeshTriangle::GetNeighbour(short i_index) const
 {
     Q_ASSERT(i_index >= 0 && i_index < 3);
 
-    return m_neighbours[i_index].get() ? *m_neighbours[i_index] : boost::optional<Triangle>{};
+    return m_neighbours[i_index];
 }
 
 void MeshTriangle::RemoveNeighbour(short i_index)
@@ -69,10 +71,36 @@ void MeshTriangle::RemoveNeighbour(short i_index)
 
 void MeshTriangle::RemoveNeighbour(const Triangle& i_neighbour)
 {
-    if (m_neighbours[0]  && *m_neighbours[0] == i_neighbour)
-        RemoveNeighbour(0);
-    if (m_neighbours[1] && *m_neighbours[1] == i_neighbour)
-        RemoveNeighbour(1);
-    if (m_neighbours[2] && *m_neighbours[2] == i_neighbour)
-        RemoveNeighbour(2);
+    if (auto p_triangle = m_neighbours[0].lock())
+    {
+        if (*p_triangle == i_neighbour)
+        {
+            RemoveNeighbour(0);
+        }
+    }
+
+    if (auto p_triangle = m_neighbours[1].lock())
+    {
+        if (*p_triangle == i_neighbour)
+        {
+            RemoveNeighbour(1);
+        }
+    }
+
+    if (auto p_triangle = m_neighbours[2].lock())
+    {
+        if (*p_triangle == i_neighbour)
+        {
+            RemoveNeighbour(2);
+        }
+    }
+}
+
+void MeshTriangle::SetPoint(short i_index, const Point3D& i_new_point)
+{
+    const Point3D old_point = GetPoint(i_index);
+    if (old_point == i_new_point)
+        return;
+
+    Triangle::SetPoint(i_index, i_new_point);
 }

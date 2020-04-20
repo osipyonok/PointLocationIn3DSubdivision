@@ -25,7 +25,7 @@ namespace
         {
             for (auto p_tr : i_mesh.GetPoint(i)->GetTriangles())
             {
-                normals[i] += p_tr->GetNormal();
+                normals[i] += p_tr.lock()->GetNormal();
             }
 
             normals[i].Normalize();
@@ -43,7 +43,7 @@ namespace
         auto p_raw_index_data = reinterpret_cast<TData*>(i_index_bytes.data());
         for (size_t i = 0; i < i_mesh.GetTrianglesCount(); ++i)
         {
-            const auto p_tr = i_mesh.GetTriangle(i);
+            const auto p_tr = i_mesh.GetTriangle(i).lock();
             //todo: fix this
             Q_ASSERT(i_point_index_map.find(p_tr->GetPoint(0)) != i_point_index_map.end());
             Q_ASSERT(i_point_index_map.find(p_tr->GetPoint(1)) != i_point_index_map.end());

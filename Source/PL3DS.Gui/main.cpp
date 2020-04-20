@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 
     Mesh mesh;
 
-    auto result = ReadMesh("C:/3dData/mesh/bunny.stl", mesh);
+    auto result = ReadMesh("C:/3dData/mesh/Box.obj", mesh);
     Q_ASSERT(result);
 
 
@@ -47,11 +47,13 @@ int main(int argc, char* argv[])
     auto point3 = mesh.AddPoint(0, 2, 0);
     auto point4 = mesh.AddPoint(1, 1, 0);
 
-    mesh.AddTriangle(*point0, *point1, *point4)->GetNormal();
-    mesh.AddTriangle(*point1, *point2, *point4)->GetNormal();
-    mesh.AddTriangle(*point2, *point3, *point4)->GetNormal();
-    mesh.AddTriangle(*point3, *point0, *point4)->GetNormal();
+    mesh.AddTriangle(*point0, *point1, *point4);
+    mesh.AddTriangle(*point1, *point2, *point4);
+    mesh.AddTriangle(*point2, *point3, *point4);
+    mesh.AddTriangle(*point3, *point0, *point4);
     */
+    //mesh.UpdatePointCoordinates({ 1, 1, 0 }, { 1, 1, 1 });
+    
 
     /*
     auto p_p0 = mesh.AddPoint({ 0, 0, 0 });
@@ -67,13 +69,13 @@ int main(int argc, char* argv[])
 
 
    SQRT3MeshSubdivider subdivider;
-   subdivider.SetParams({ 0.001 });
+   subdivider.SetParams({ 0.1 });
    subdivider.Subdivide(mesh);
 
    /*
    for (size_t i = 0; i < mesh.GetTrianglesCount(); ++i)
    {
-       auto tr = mesh.GetTriangle(i);
+       auto tr = mesh.GetTriangle(i).lock();
        qDebug() << "Segment " << tr->GetPoint(0).GetX() << " " << tr->GetPoint(0).GetY()
                        << " " << tr->GetPoint(1).GetX() << " " << tr->GetPoint(1).GetY();
        qDebug() << "Segment " << tr->GetPoint(1).GetX() << " " << tr->GetPoint(1).GetY()

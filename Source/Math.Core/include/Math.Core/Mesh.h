@@ -13,6 +13,8 @@ class Point3D;
 class Triangle;
 class Vector3D;
 
+using TriangleHandle = std::weak_ptr<MeshTriangle>;
+
 class MATH_CORE_API Mesh final : public QObject
 {
 	Q_OBJECT
@@ -23,18 +25,20 @@ public:
 
     MeshPoint* AddPoint(const Point3D& i_point);
     MeshPoint* AddPoint(double i_x, double i_y, double i_z);
-    MeshTriangle* AddTriangle(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c);
+    TriangleHandle AddTriangle(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c);
 
 
     MeshPoint* GetPoint(const Point3D& i_point) const;
     MeshPoint* GetPoint(double i_x, double i_y, double i_z) const;
     MeshPoint* GetPoint(size_t i_index) const;
-    MeshTriangle* GetTriangleOrientationDependent(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c) const;
-    MeshTriangle* GetTriangleOrientationIndependent(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c) const;
-    MeshTriangle* GetTriangle(size_t i_index) const;
+    TriangleHandle GetTriangleOrientationDependent(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c) const;
+    TriangleHandle GetTriangleOrientationIndependent(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c) const;
+    TriangleHandle GetTriangle(size_t i_index) const;
 
-    std::vector<MeshTriangle*> GetTrianglesIncidentToEdge(const Point3D& i_a, const Point3D& i_b) const;
-    std::vector<MeshTriangle*> GetTrianglesIncidentToPoint(const Point3D& i_point) const;
+    std::vector<TriangleHandle> GetTrianglesIncidentToEdge(const Point3D& i_a, const Point3D& i_b) const;
+    std::vector<TriangleHandle> GetTrianglesIncidentToPoint(const Point3D& i_point) const;
+
+    void UpdatePointCoordinates(const Point3D& i_old_coordinates, const Point3D& i_new_coordinates);
 
     void RemovePoint(const Point3D& i_point);
     void RemovePoint(double i_x, double i_y, double i_z);

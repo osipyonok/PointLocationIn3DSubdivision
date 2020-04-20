@@ -2,8 +2,6 @@
 
 #include <Math.Core/API.h>
 
-#include <QObject>
-
 #include <boost/operators.hpp>
 
 class Point3D;
@@ -14,15 +12,14 @@ MATH_CORE_API bool ComparePointsZYX(const Point3D& i_pt1, const Point3D& i_pt2);
 MATH_CORE_API size_t hash_value(const Point3D& i_point);
 
 class MATH_CORE_API Point3D 
-    : public QObject
-    , public boost::addable<Point3D>
-    , public boost::subtractable<Point3D>
-    , public boost::less_than_comparable<Point3D>
-    , public boost::equality_comparable<Point3D>
-    , public boost::multipliable2<Point3D, double>
-    , public boost::dividable2<Point3D, double>
+    : private boost::addable<Point3D>
+    , private boost::subtractable<Point3D>
+    , private boost::less_than_comparable<Point3D>
+    , private boost::equality_comparable<Point3D>
+    , private boost::multipliable2<Point3D, double>
+    , private boost::dividable2<Point3D, double>
 {
-	Q_OBJECT
+	//Q_OBJECT
 
 public:
 	Point3D();
@@ -31,7 +28,7 @@ public:
 
 	Point3D(const Point3D& i_other);
 
-	virtual ~Point3D() override;
+    virtual ~Point3D();;// override;
 
 	double  Get(short i_index) const;
 	double& Get(short i_index);

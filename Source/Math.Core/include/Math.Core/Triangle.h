@@ -4,8 +4,6 @@
 
 #include <Math.Core/Point3D.h>
 
-#include <QObject>
-
 #include <array>
 #include <memory>
 
@@ -17,19 +15,19 @@ class Triangle;
 
 MATH_CORE_API size_t hash_value(const Triangle& i_triangle);
 
-class MATH_CORE_API Triangle : public QObject
+class MATH_CORE_API Triangle
 {
-	Q_OBJECT
-
 public:
 	Triangle(const Point3D& i_point1, const Point3D& i_point2, const Point3D& i_point3);
     Triangle(const Triangle& i_other);
 
     Triangle(Triangle&& i_triangle);
 
-	~Triangle() override;
+    virtual ~Triangle();
 
 	Point3D GetPoint(short i_index) const;
+
+    virtual void SetPoint(short i_index, const Point3D& i_new_point);
 
 	Vector3D GetNormal() const;
 

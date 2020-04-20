@@ -128,7 +128,7 @@ namespace
             
             for (size_t i = 0; i < i_mesh.GetTrianglesCount(); ++i)
             {
-                auto triangle = i_mesh.GetTriangle(i);
+                auto triangle = i_mesh.GetTriangle(i).lock();
                 
                 stlloader::Facet facet;
 

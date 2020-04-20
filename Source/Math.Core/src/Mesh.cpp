@@ -42,42 +42,46 @@ namespace
 
     struct TriangleContainer
     {
-        MeshTriangle* AddTriangle(const Triangle& i_triangle);
+        TriangleHandle AddTriangle(const Triangle& i_triangle);
         bool ContainsTriangle(const Triangle& i_triangle) const;
-        MeshTriangle* GetTriangle(const Triangle& i_triangle) const;
+        TriangleHandle GetTriangle(const Triangle& i_triangle) const;
         void RemoveTriangle(const Triangle& i_triangle);
         void RemoveTrianglesWithVertex(const Point3D& i_point);
 
-        std::vector<MeshTriangle*> GetTrianglesIncidentToEdge(const Point3D& i_first_point, const Point3D& i_second_point) const;
+        std::vector<TriangleHandle> GetTrianglesIncidentToEdge(const Point3D& i_first_point, const Point3D& i_second_point) const;
+
+        void UpdateVertexPosition(const Point3D& i_old_vertex, const Point3D& i_new_vertex);
 
         size_t GetTrianglesCount() const;
-        MeshTriangle* GetTriangleAt(size_t i_index) const;
+        TriangleHandle GetTriangleAt(size_t i_index) const;
 
     private:
-        enum class Coordinate { X = 0, Y = 1, Z = 2 };
+        using TrianglePtr = std::shared_ptr<MeshTriangle>;
+
+        enum class VertexNumber { First = 0, Second = 1, Third = 2 };
         enum class EdgeNumber { First = 0, Second = 1, Third = 2 };
 
         struct TriangleTag;
-        template<Coordinate coordinate>  struct VertexTag;
+        template<VertexNumber coordinate>  struct VertexTag;
         template<EdgeNumber edge_number> struct NonOrientedEdgeTag;
 
         struct TriangleExtractor
         {
             using result_type = const Triangle&;
 
-            result_type operator()(const std::unique_ptr<MeshTriangle>& ip_triangle) const
+            result_type operator()(const TrianglePtr& ip_triangle) const
             {
                 Q_ASSERT(ip_triangle);
                 return *ip_triangle;
             }
         };
 
-        template<Coordinate coordinate>
+        template<VertexNumber coordinate>
         struct VertexExtractor
         {
             using result_type = Point3D;
 
-            result_type operator()(const std::unique_ptr<MeshTriangle>& ip_triangle) const
+            result_type operator()(const TrianglePtr& ip_triangle) const
             {
                 Q_ASSERT(ip_triangle);
                 return ip_triangle->GetPoint(static_cast<int>(coordinate));
@@ -89,7 +93,7 @@ namespace
         {
             using result_type = Edge;
 
-            result_type operator()(const std::unique_ptr<MeshTriangle>& ip_triangle) const
+            result_type operator()(const TrianglePtr& ip_triangle) const
             {
                 Q_ASSERT(ip_triangle);
                 auto point1 = ip_triangle->GetPoint(static_cast<int>(edge_number));
@@ -99,23 +103,26 @@ namespace
         };
 
         template<EdgeNumber edge_number> // other triangle's edge number
-        void _AddNeighbours(MeshTriangle& i_new_triangle);
+        void _AddNeighbours(TriangleHandle i_new_triangle);
 
         template<EdgeNumber edge_number>
-        std::vector<MeshTriangle*> _GetTrianglesWithNonOrientedEdge(const Point3D& i_first_point, const Point3D& i_second_point) const;
+        std::vector<TriangleHandle> _GetTrianglesWithNonOrientedEdge(const Point3D& i_first_point, const Point3D& i_second_point) const;
 
-        template<Coordinate coordinate> 
+        template<VertexNumber coordinate> 
         void _RemoveTrianglesWithVertex(const Point3D& i_point);
+
+        template<VertexNumber vertex_number>
+        void _UpdateVertexPosition(const Point3D& i_old_vertex, const Point3D& i_new_vertex);
 
 
         using TriangleContainerData = multi_index_container<
-            std::unique_ptr<MeshTriangle>,
+            TrianglePtr,
             indexed_by<
                 random_access<>,
                 hashed_unique<tag<TriangleTag>, TriangleExtractor>,
-                hashed_non_unique<tag<VertexTag<Coordinate::X>>, VertexExtractor<Coordinate::X>>,
-                hashed_non_unique<tag<VertexTag<Coordinate::Y>>, VertexExtractor<Coordinate::Y>>,
-                hashed_non_unique<tag<VertexTag<Coordinate::Z>>, VertexExtractor<Coordinate::Z>>,
+                hashed_non_unique<tag<VertexTag<VertexNumber::First>>, VertexExtractor<VertexNumber::First>>,
+                hashed_non_unique<tag<VertexTag<VertexNumber::Second>>, VertexExtractor<VertexNumber::Second>>,
+                hashed_non_unique<tag<VertexTag<VertexNumber::Third>>, VertexExtractor<VertexNumber::Third>>,
                 hashed_non_unique<tag<NonOrientedEdgeTag<EdgeNumber::First>>,  NonOrientedEdgeExtractor<EdgeNumber::First>>,
                 hashed_non_unique<tag<NonOrientedEdgeTag<EdgeNumber::Second>>, NonOrientedEdgeExtractor<EdgeNumber::Second>>,
                 hashed_non_unique<tag<NonOrientedEdgeTag<EdgeNumber::Third>>,  NonOrientedEdgeExtractor<EdgeNumber::Third>>
@@ -134,6 +141,8 @@ namespace
 
         size_t GetPointsCount() const;
         MeshPoint* GetPointAt(size_t index) const;
+
+        void UpdatePointCoordinates(const Point3D& i_old_coordinates, const Point3D& i_new_coordinates);
 
     private:
         struct PointTag;
@@ -160,29 +169,28 @@ namespace
         PointContainerData m_data;
     };
 
-    MeshTriangle* TriangleContainer::AddTriangle(const Triangle& i_triangle)
+    TriangleHandle TriangleContainer::AddTriangle(const Triangle& i_triangle)
     {
-        auto p_triangle = std::make_unique<MeshTriangle>(i_triangle.GetPoint(0), i_triangle.GetPoint(1), i_triangle.GetPoint(2));
-        auto p_triangle_raw = p_triangle.get();
+        auto p_triangle = std::make_shared<MeshTriangle>(i_triangle.GetPoint(0), i_triangle.GetPoint(1), i_triangle.GetPoint(2));
 
-        _AddNeighbours<EdgeNumber::First>(*p_triangle);
-        _AddNeighbours<EdgeNumber::Second>(*p_triangle);
-        _AddNeighbours<EdgeNumber::Third>(*p_triangle);
+        _AddNeighbours<EdgeNumber::First>(p_triangle);
+        _AddNeighbours<EdgeNumber::Second>(p_triangle);
+        _AddNeighbours<EdgeNumber::Third>(p_triangle);
         
-        m_data.insert(m_data.end(), std::move(p_triangle));
+        m_data.insert(m_data.end(), p_triangle);
 
-        return p_triangle_raw;
+        return p_triangle;
     }
 
     bool TriangleContainer::ContainsTriangle(const Triangle& i_triangle) const
     {
-        return GetTriangle(i_triangle);
+        return GetTriangle(i_triangle).lock() != nullptr;
     }
 
-    MeshTriangle* TriangleContainer::GetTriangle(const Triangle& i_triangle) const
+    TriangleHandle TriangleContainer::GetTriangle(const Triangle& i_triangle) const
     {
         auto it = m_data.get<TriangleTag>().find(i_triangle);
-        return it != m_data.get<TriangleTag>().end() ? it->get() : nullptr;
+        return it != m_data.get<TriangleTag>().end() ? *it : nullptr;
     }
 
     void TriangleContainer::RemoveTriangle(const Triangle& i_triangle)
@@ -191,12 +199,18 @@ namespace
         auto it = m_data.get<TriangleTag>().find(i_triangle);
         if (it != m_data.get<TriangleTag>().end())
         {
-            if (auto neighbour = (**it).GetNeighbour(0))
-                GetTriangle(neighbour.get())->RemoveNeighbour(i_triangle);
-            if (auto neighbour = (**it).GetNeighbour(1))
-                GetTriangle(neighbour.get())->RemoveNeighbour(i_triangle);
-            if (auto neighbour = (**it).GetNeighbour(2))
-                GetTriangle(neighbour.get())->RemoveNeighbour(i_triangle);
+            if (auto neighbour = (**it).GetNeighbour(0).lock())
+            {
+                neighbour->RemoveNeighbour(i_triangle);
+            }
+            if (auto neighbour = (**it).GetNeighbour(1).lock())
+            {
+                neighbour->RemoveNeighbour(i_triangle);
+            }
+            if (auto neighbour = (**it).GetNeighbour(2).lock())
+            {
+                neighbour->RemoveNeighbour(i_triangle);
+            }
 
             m_data.get<TriangleTag>().erase(it);
         }
@@ -204,18 +218,18 @@ namespace
 
     void TriangleContainer::RemoveTrianglesWithVertex(const Point3D& i_point)
     {
-        _RemoveTrianglesWithVertex<Coordinate::X>(i_point);
-        _RemoveTrianglesWithVertex<Coordinate::Y>(i_point);
-        _RemoveTrianglesWithVertex<Coordinate::Z>(i_point);
+        _RemoveTrianglesWithVertex<VertexNumber::First>(i_point);
+        _RemoveTrianglesWithVertex<VertexNumber::Second>(i_point);
+        _RemoveTrianglesWithVertex<VertexNumber::Third>(i_point);
     }
 
-    std::vector<MeshTriangle*> TriangleContainer::GetTrianglesIncidentToEdge(const Point3D& i_first_point, const Point3D& i_second_point) const
+    std::vector<TriangleHandle> TriangleContainer::GetTrianglesIncidentToEdge(const Point3D& i_first_point, const Point3D& i_second_point) const
     {
         auto by_first_edge  = _GetTrianglesWithNonOrientedEdge<EdgeNumber::First>(i_first_point, i_second_point);
         auto by_second_edge = _GetTrianglesWithNonOrientedEdge<EdgeNumber::Second>(i_first_point, i_second_point);
         auto by_third_edge  = _GetTrianglesWithNonOrientedEdge<EdgeNumber::Third>(i_first_point, i_second_point);
 
-        std::vector<MeshTriangle*> triangles;
+        std::vector<TriangleHandle> triangles;
         triangles.reserve(by_first_edge.size() + by_second_edge.size() + by_third_edge.size());
 
         std::copy(by_first_edge.begin(), by_first_edge.end(), std::back_inserter(triangles));
@@ -225,24 +239,33 @@ namespace
         return std::move(triangles);
     }
 
+    void TriangleContainer::UpdateVertexPosition(const Point3D& i_old_vertex, const Point3D& i_new_vertex)
+    {
+        _UpdateVertexPosition<VertexNumber::First>(i_old_vertex, i_new_vertex);
+        _UpdateVertexPosition<VertexNumber::Second>(i_old_vertex, i_new_vertex);
+        _UpdateVertexPosition<VertexNumber::Third>(i_old_vertex, i_new_vertex);
+    }
+
     size_t TriangleContainer::GetTrianglesCount() const
     {
         return m_data.size();
     }
 
-    MeshTriangle* TriangleContainer::GetTriangleAt(size_t i_index) const
+    TriangleHandle TriangleContainer::GetTriangleAt(size_t i_index) const
     {
-        return m_data[i_index].get();
+        return m_data[i_index];
     }
 
     template<TriangleContainer::EdgeNumber edge_number>
-    void TriangleContainer::_AddNeighbours(MeshTriangle& i_new_triangle)
+    void TriangleContainer::_AddNeighbours(TriangleHandle i_new_triangle)
     {
+        auto& triangle = *i_new_triangle.lock();
+
         Edge edges[3] = 
         {
-            { i_new_triangle.GetPoint(0), i_new_triangle.GetPoint(1) },
-            { i_new_triangle.GetPoint(1), i_new_triangle.GetPoint(2) },
-            { i_new_triangle.GetPoint(2), i_new_triangle.GetPoint(0) }
+            { triangle.GetPoint(0), triangle.GetPoint(1) },
+            { triangle.GetPoint(1), triangle.GetPoint(2) },
+            { triangle.GetPoint(2), triangle.GetPoint(0) }
         };
 
         for (short i = 0; i < 3; ++i)
@@ -252,37 +275,50 @@ namespace
             Q_ASSERT(std::distance(range.first, range.second) <= 1);
             for (auto it = range.first; it != range.second; ++it)
             {
-                m_data.get<NonOrientedEdgeTag<edge_number>>().modify(it, [&](const std::unique_ptr<MeshTriangle>& ip_triangle)
+                m_data.get<NonOrientedEdgeTag<edge_number>>().modify(it, [&](const TrianglePtr& ip_triangle)
                 {
                     ip_triangle->SetNeighbour(i_new_triangle, static_cast<short>(edge_number));
-                    i_new_triangle.SetNeighbour(*ip_triangle, i);
+                    i_new_triangle.lock()->SetNeighbour(ip_triangle, i);
                 });
             }
         }
     }
 
     template<TriangleContainer::EdgeNumber edge_number>
-    std::vector<MeshTriangle*> TriangleContainer::_GetTrianglesWithNonOrientedEdge(const Point3D& i_first_point, const Point3D& i_second_point) const
+    std::vector<TriangleHandle> TriangleContainer::_GetTrianglesWithNonOrientedEdge(const Point3D& i_first_point, const Point3D& i_second_point) const
     {
         auto range = m_data.get<NonOrientedEdgeTag<edge_number>>().equal_range(Edge{ i_first_point, i_second_point });
-        std::vector<MeshTriangle*> triangles;
+        std::vector<TriangleHandle> triangles;
         for (auto it = range.first; it != range.second; ++it)
         {
-            triangles.push_back(it->get());
+            triangles.push_back(*it);
         }
         return std::move(triangles);
     }
 
-    template<TriangleContainer::Coordinate coordinate>
+    template<TriangleContainer::VertexNumber coordinate>
     void TriangleContainer::_RemoveTrianglesWithVertex(const Point3D& i_point)
     {
         auto range = m_data.get<VertexTag<coordinate>>().equal_range(i_point);
-        std::vector<Triangle*> triangles;
+        std::vector<TriangleHandle> triangles;
         for (auto it = range.first; it != range.second; ++it)
-            triangles.emplace_back(it->get());
+            triangles.emplace_back(*it);
 
         for (auto p_triangle : triangles)
-            RemoveTriangle(*p_triangle);
+            RemoveTriangle(*p_triangle.lock());
+    }
+
+    template<TriangleContainer::VertexNumber vertex_number>
+    void TriangleContainer::_UpdateVertexPosition(const Point3D& i_old_vertex, const Point3D& i_new_vertex)
+    {
+        auto& container = m_data.get<VertexTag<vertex_number>>();
+        for (auto it = container.find(i_old_vertex); it != container.end(); it = container.find(i_old_vertex))
+        {
+            container.modify(it, [&i_new_vertex](const TrianglePtr& ip_triangle)
+            {
+                ip_triangle->SetPoint(static_cast<int>(vertex_number), i_new_vertex);
+            });
+        }
     }
 
     MeshPoint* PointContainer::AddPoint(const Point3D& i_point)
@@ -318,6 +354,20 @@ namespace
     {
         return m_data[index].get();
     }
+
+    void PointContainer::UpdatePointCoordinates(const Point3D& i_old_coordinates, const Point3D& i_new_coordinates)
+    {
+        auto it = m_data.get<PointTag>().find(i_old_coordinates);
+        if (it == m_data.get<PointTag>().end())
+            return;
+
+        m_data.get<PointTag>().modify(it, [&](const std::unique_ptr<MeshPoint>& ip_point)
+        {
+            ip_point->SetX(i_new_coordinates.GetX());
+            ip_point->SetY(i_new_coordinates.GetY());
+            ip_point->SetZ(i_new_coordinates.GetZ());
+        });
+    }
 }
 
 struct Mesh::Impl
@@ -347,7 +397,7 @@ MeshPoint* Mesh::AddPoint(double i_x, double i_y, double i_z)
     return AddPoint({ i_x, i_y, i_z });
 }
 
-MeshTriangle* Mesh::AddTriangle(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c)
+TriangleHandle Mesh::AddTriangle(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c)
 {
     auto p_pnt1 = AddPoint(i_a);
     auto p_pnt2 = AddPoint(i_b);
@@ -381,33 +431,50 @@ MeshPoint* Mesh::GetPoint(size_t i_index) const
     return mp_impl->m_points.GetPointAt(i_index);
 }
 
-MeshTriangle* Mesh::GetTriangleOrientationDependent(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c) const
+TriangleHandle Mesh::GetTriangleOrientationDependent(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c) const
 {
     return mp_impl->m_triangles.GetTriangle({ i_a, i_b, i_c });
 }
 
-MeshTriangle* Mesh::GetTriangleOrientationIndependent(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c) const
+TriangleHandle Mesh::GetTriangleOrientationIndependent(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c) const
 {
-    if (auto p_tr = GetTriangleOrientationDependent(i_a, i_b, i_c))
+    if (auto p_tr = GetTriangleOrientationDependent(i_a, i_b, i_c).lock())
         return p_tr;
     return GetTriangleOrientationDependent(i_c, i_b, i_a);
 }
 
-MeshTriangle* Mesh::GetTriangle(size_t i_index) const
+TriangleHandle Mesh::GetTriangle(size_t i_index) const
 {
     Q_ASSERT(i_index >= 0 && i_index < GetTrianglesCount());
     return mp_impl->m_triangles.GetTriangleAt(i_index);
 }
 
-std::vector<MeshTriangle*> Mesh::GetTrianglesIncidentToEdge(const Point3D& i_a, const Point3D& i_b) const
+std::vector<TriangleHandle> Mesh::GetTrianglesIncidentToEdge(const Point3D& i_a, const Point3D& i_b) const
 {
     return mp_impl->m_triangles.GetTrianglesIncidentToEdge(i_a, i_b);
 }
 
-std::vector<MeshTriangle*> Mesh::GetTrianglesIncidentToPoint(const Point3D& i_point) const
+std::vector<TriangleHandle> Mesh::GetTrianglesIncidentToPoint(const Point3D& i_point) const
 {
-    auto p_point = GetPoint(i_point);
-    return p_point ? p_point->GetTriangles() : std::vector<MeshTriangle*>{};
+    if (auto p_point = GetPoint(i_point))
+    {
+        auto& trs = p_point->GetTriangles();
+        return std::vector<TriangleHandle>{ trs.begin(), trs.end() };
+    }
+    return std::vector<TriangleHandle>{};
+}
+
+void Mesh::UpdatePointCoordinates(const Point3D& i_old_coordinates, const Point3D& i_new_coordinates)
+{
+    MeshPoint* p_point = GetPoint(i_old_coordinates);
+    if (!p_point)
+    {
+        Q_ASSERT(!"Can't find given point");
+        return;
+    }
+
+    mp_impl->m_points.UpdatePointCoordinates(i_old_coordinates, i_new_coordinates);
+    mp_impl->m_triangles.UpdateVertexPosition(i_old_coordinates, i_new_coordinates);
 }
 
 void Mesh::RemovePoint(const Point3D& i_point)
@@ -425,9 +492,9 @@ void Mesh::RemoveTriangle(const Point3D& i_a, const Point3D& i_b, const Point3D&
 {
     auto p_triangle = GetTriangleOrientationDependent(i_a, i_b, i_c );
 
-    GetPoint(i_a)->RemoveTriangle(p_triangle);
-    GetPoint(i_b)->RemoveTriangle(p_triangle);
-    GetPoint(i_c)->RemoveTriangle(p_triangle);
+    GetPoint(i_a)->RemoveTriangle(*p_triangle.lock());
+    GetPoint(i_b)->RemoveTriangle(*p_triangle.lock());
+    GetPoint(i_c)->RemoveTriangle(*p_triangle.lock());
 
     mp_impl->m_triangles.RemoveTriangle({ i_a, i_b, i_c });
 }

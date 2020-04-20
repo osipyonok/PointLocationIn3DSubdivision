@@ -72,6 +72,15 @@ Point3D Triangle::GetPoint(short i_index) const
 	return m_points[i_index];
 }
 
+void Triangle::SetPoint(short i_index, const Point3D& i_new_point)
+{
+    if (m_points[i_index] != i_new_point)
+    {
+        m_points[i_index] = i_new_point;
+        _InvalidateHash();
+    }
+}
+
 Vector3D Triangle::GetNormal() const
 {
 	return Cross({ m_points[0], m_points[1] }, { m_points[0], m_points[2] }).Normalized();

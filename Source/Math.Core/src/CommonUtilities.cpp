@@ -9,6 +9,7 @@
 #include <cmath>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 
 double DistanceSqr(const Point3D& i_point1, const Point3D& i_point2)

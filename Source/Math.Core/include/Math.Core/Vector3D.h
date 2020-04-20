@@ -7,8 +7,6 @@
 
 class MATH_CORE_API Vector3D : public Point3D
 {
-	Q_OBJECT
-
 public:
 	Vector3D();
 	explicit Vector3D(const Point3D& i_point);

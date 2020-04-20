@@ -10,15 +10,13 @@ class Point3D;
 class Vector3D;
 
 
-class MATH_CORE_API Plane final : public QObject
+class MATH_CORE_API Plane final
 {
-	Q_OBJECT
-
 public:
 	Plane(const Point3D& i_origin, const Vector3D& i_normal);
 	Plane(const Plane& i_other);
 
-	~Plane() override = default;
+	~Plane() = default;
 
 	const Point3D& GetOrigin() const;
 	const Vector3D& GetNormal() const;
