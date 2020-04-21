@@ -13,3 +13,7 @@ MATH_CORE_API double DistanceSqr(const Point3D& i_point1, const Point3D& i_point
 
 MATH_CORE_API double Distance(const Point3D& i_point, const BoundingBox& i_bbox);
 MATH_CORE_API double Distance(const Point3D& i_point, const Triangle& i_triangle);
+
+MATH_CORE_API bool TriangleWithBBoxIntersection(const Triangle& i_triangle, const BoundingBox& i_bbox);
+
+MATH_CORE_API void ExtrudeInplace(BoundingBox& i_bbox, double i_offset);

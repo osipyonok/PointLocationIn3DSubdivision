@@ -34,6 +34,7 @@ public:
     TriangleHandle GetTriangleOrientationDependent(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c) const;
     TriangleHandle GetTriangleOrientationIndependent(const Point3D& i_a, const Point3D& i_b, const Point3D& i_c) const;
     TriangleHandle GetTriangle(size_t i_index) const;
+    TriangleHandle GetTriangle(const Triangle& i_triangle) const;
 
     std::vector<TriangleHandle> GetTrianglesIncidentToEdge(const Point3D& i_a, const Point3D& i_b) const;
     std::vector<TriangleHandle> GetTrianglesIncidentToPoint(const Point3D& i_point) const;

@@ -12,6 +12,101 @@
 #include <vector>
 
 
+namespace
+{
+    inline void _UpdateMinMax(double i_x0, double i_x1, double i_x2, double& o_min, double& o_max)
+    {
+        o_min = o_max = i_x0;
+        if (o_min > i_x1)
+            o_min = i_x1;
+        if (o_min > i_x2)
+            o_min = i_x2;
+        if (o_max < i_x1)
+            o_max = i_x1;
+        if (o_max < i_x2)
+            o_max = i_x2;
+    }
+
+    inline bool _AxisTestX(double i_a, double i_b, const Point3D& i_p0, const Point3D& i_p1, const Point3D& i_box_halfdelta)
+    {
+        auto abs_a = i_a < 0 ? -i_a : i_a;
+        auto abs_b = i_b < 0 ? -i_b : i_b;
+
+        auto p1 = i_a * i_p0.GetY() - i_b * i_p0.GetZ();
+        auto p2 = i_a * i_p1.GetY() - i_b * i_p1.GetZ();
+
+        auto min = p1 < p2 ? p1 : p2;
+        auto max = p1 < p2 ? p2 : p1;
+
+        auto rad = abs_a * i_box_halfdelta.GetY() + abs_b * i_box_halfdelta.GetZ();
+
+        if (min > rad + DBL_EPSILON || max + DBL_EPSILON < -rad)
+            return false;
+        return true;
+    }
+
+    inline bool _AxisTestY(double i_a, double i_b, const Point3D& i_p0, const Point3D& i_p1, const Point3D& i_box_halfdelta)
+    {
+        auto abs_a = i_a < 0 ? -i_a : i_a;
+        auto abs_b = i_b < 0 ? -i_b : i_b;
+
+        auto p1 = -i_a * i_p0.GetX() + i_b * i_p0.GetZ();
+        auto p2 = -i_a * i_p1.GetX() + i_b * i_p1.GetZ();
+
+        auto min = p1 < p2 ? p1 : p2;
+        auto max = p1 < p2 ? p2 : p1;
+
+        auto rad = abs_a * i_box_halfdelta.GetX() + abs_b * i_box_halfdelta.GetZ();
+
+        if (min > rad + DBL_EPSILON || max + DBL_EPSILON < -rad)
+            return false;
+        return true;
+    }
+
+    inline bool _AxisTestZ(double i_a, double i_b, const Point3D& i_p0, const Point3D& i_p1, const Point3D& i_box_halfdelta)
+    {
+        auto abs_a = i_a < 0 ? -i_a : i_a;
+        auto abs_b = i_b < 0 ? -i_b : i_b;
+
+        auto p1 = i_a * i_p0.GetX() - i_b * i_p0.GetY();
+        auto p2 = i_a * i_p1.GetX() - i_b * i_p1.GetY();
+
+        auto min = p1 < p2 ? p1 : p2;
+        auto max = p1 < p2 ? p2 : p1;
+
+        auto rad = abs_a * i_box_halfdelta.GetX() + abs_b * i_box_halfdelta.GetY();
+
+        if (min > rad + DBL_EPSILON || max + DBL_EPSILON < -rad)
+            return false;
+        return true;
+    }
+
+    inline bool _PlaneBoxOverlap(const Point3D& i_point, const Vector3D& i_normal, const Point3D& i_box_halfdelta)
+    {
+        Vector3D min, max;
+        for (size_t i = 0; i < 3; ++i)
+        {
+            if (i_normal.Get(i) > 0)
+            {
+                min.Set(-i_box_halfdelta.Get(i) - i_point.Get(i), i);
+                max.Set(i_box_halfdelta.Get(i) - i_point.Get(i), i);
+            }
+            else
+            {
+                min.Set(i_box_halfdelta.Get(i) - i_point.Get(i), i);
+                max.Set(-i_box_halfdelta.Get(i) - i_point.Get(i), i);
+            }
+        }
+
+        if (Dot(i_normal, min) > DBL_EPSILON)
+            return false;
+        if (Dot(i_normal, max) >= -DBL_EPSILON)
+            return true;
+        return false;
+    }
+}
+
+
 double DistanceSqr(const Point3D& i_point1, const Point3D& i_point2)
 {
     const auto tmp = i_point1 - i_point2;
@@ -190,4 +285,74 @@ double Distance(const Point3D& i_point, const Triangle& i_triangle)
     auto dist_sqr = Dot(Vector3D{ nearest - i_point }, Vector3D{ nearest - i_point });
 
     return std::sqrt(dist_sqr);
+}
+
+bool TriangleWithBBoxIntersection(const Triangle& i_triangle, const BoundingBox& i_bbox)
+{
+    auto bbox_center = (i_bbox.GetMin() + i_bbox.GetMax()) / 2;
+    auto half_delta = (i_bbox.GetMax() - i_bbox.GetMin()) / 2;
+
+    // translated triangle points
+    auto tr_point0 = i_triangle.GetPoint(0) - bbox_center;
+    auto tr_point1 = i_triangle.GetPoint(1) - bbox_center;
+    auto tr_point2 = i_triangle.GetPoint(2) - bbox_center;
+
+    auto edge0 = tr_point1 - tr_point0;
+    auto edge1 = tr_point2 - tr_point1;
+    auto edge2 = tr_point0 - tr_point2;
+
+    if (!_AxisTestX(edge0.GetZ(), edge0.GetY(), tr_point0, tr_point2, half_delta))
+        return false;
+    if (!_AxisTestY(edge0.GetZ(), edge0.GetX(), tr_point0, tr_point2, half_delta))
+        return false;
+    if (!_AxisTestZ(edge0.GetY(), edge0.GetX(), tr_point1, tr_point2, half_delta))
+        return false;
+
+    if (!_AxisTestX(edge1.GetZ(), edge1.GetY(), tr_point0, tr_point2, half_delta))
+        return false;
+    if (!_AxisTestY(edge1.GetZ(), edge1.GetX(), tr_point0, tr_point2, half_delta))
+        return false;
+    if (!_AxisTestZ(edge1.GetY(), edge1.GetX(), tr_point0, tr_point1, half_delta))
+        return false;
+
+    if (!_AxisTestX(edge2.GetZ(), edge2.GetY(), tr_point0, tr_point1, half_delta))
+        return false;
+    if (!_AxisTestY(edge2.GetZ(), edge2.GetX(), tr_point0, tr_point1, half_delta))
+        return false;
+    if (!_AxisTestZ(edge2.GetY(), edge2.GetX(), tr_point1, tr_point2, half_delta))
+        return false;
+
+    double min = 0, max = 0;
+
+    _UpdateMinMax(tr_point0.GetX(), tr_point1.GetX(), tr_point2.GetX(), min, max);
+    min -= DBL_EPSILON;
+    max += DBL_EPSILON;
+    if (min > half_delta.GetX() || max < -half_delta.GetX())
+        return false;
+
+    _UpdateMinMax(tr_point0.GetY(), tr_point1.GetY(), tr_point2.GetY(), min, max);
+    min -= DBL_EPSILON;
+    max += DBL_EPSILON;
+    if (min > half_delta.GetY() || max < -half_delta.GetY())
+        return false;
+
+    _UpdateMinMax(tr_point0.GetZ(), tr_point1.GetZ(), tr_point2.GetZ(), min, max);
+    min -= DBL_EPSILON;
+    max += DBL_EPSILON;
+    if (min > half_delta.GetZ() || max < -half_delta.GetZ())
+        return false;
+
+    auto normal = Cross(Vector3D(edge0), Vector3D(edge1));
+    if (!_PlaneBoxOverlap(tr_point0, normal, half_delta))
+        return false;
+
+    return true;
+}
+
+void ExtrudeInplace(BoundingBox& i_bbox, double i_offset)
+{
+    assert(i_offset >= 0);
+    Point3D offset_point(i_offset, i_offset, i_offset);
+    i_bbox.AddPoint(i_bbox.GetMin() - offset_point);
+    i_bbox.AddPoint(i_bbox.GetMax() + offset_point);
 }

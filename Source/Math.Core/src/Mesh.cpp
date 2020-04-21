@@ -272,7 +272,7 @@ namespace
         {
             auto& edge = edges[i];
             auto range = m_data.get<NonOrientedEdgeTag<edge_number>>().equal_range(edge);
-            Q_ASSERT(std::distance(range.first, range.second) <= 1);
+            //Q_ASSERT(std::distance(range.first, range.second) <= 1);
             for (auto it = range.first; it != range.second; ++it)
             {
                 m_data.get<NonOrientedEdgeTag<edge_number>>().modify(it, [&](const TrianglePtr& ip_triangle)
@@ -447,6 +447,11 @@ TriangleHandle Mesh::GetTriangle(size_t i_index) const
 {
     Q_ASSERT(i_index >= 0 && i_index < GetTrianglesCount());
     return mp_impl->m_triangles.GetTriangleAt(i_index);
+}
+
+TriangleHandle Mesh::GetTriangle(const Triangle& i_triangle) const
+{
+    return mp_impl->m_triangles.GetTriangle(i_triangle);
 }
 
 std::vector<TriangleHandle> Mesh::GetTrianglesIncidentToEdge(const Point3D& i_a, const Point3D& i_b) const

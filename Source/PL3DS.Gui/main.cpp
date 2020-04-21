@@ -8,6 +8,7 @@
 #include <Math.Core/MeshTriangle.h>
 
 #include <Math.Algos/Sqrt3Subdivision.h>
+#include <Math.Algos/Voxelizer.h>
 
 #include <Math.IO/MeshIO.h>
 
@@ -68,9 +69,18 @@ int main(int argc, char* argv[])
     */
 
 
-   SQRT3MeshSubdivider subdivider;
-   subdivider.SetParams({ 0.1 });
-   subdivider.Subdivide(mesh);
+   //SQRT3MeshSubdivider subdivider;
+   //subdivider.SetParams({ 0.1 });
+   //subdivider.Subdivide(mesh);
+
+    Voxelizer voxelizer;
+    Voxelizer::Params params;
+    params.m_resolution_x = params.m_resolution_y = params.m_resolution_z = 0.1;
+    params.m_precision = 0.000003;
+    voxelizer.SetParams(params);
+
+    Mesh voxelized_mesh;
+    voxelizer.Voxelize(mesh, voxelized_mesh);
 
    /*
    for (size_t i = 0; i < mesh.GetTrianglesCount(); ++i)
@@ -95,14 +105,14 @@ int main(int argc, char* argv[])
     p_renderable_mesh->SetColor(QColor("teal"));
     Rendering::RenderablesController::GetInstance().AddRenderable(*p_renderable_mesh);
 
-    Rendering::RenderableMesh renderable_mesh2(mesh);
+    Rendering::RenderableMesh renderable_mesh2(voxelized_mesh);
     renderable_mesh2.SetRenderingStyle(Rendering::RenderableMesh::RenderingStyle::Transparent);
     renderable_mesh2.SetColor(QColor("grey"));
     Rendering::RenderablesController::GetInstance().AddRenderable(renderable_mesh2);
-    TransformMatrix transform;
-    transform.Translate({ -1, 0, -1 });
-    transform.Scale(0.5);
-    renderable_mesh2.SetTransformMatrix(transform);
+    //TransformMatrix transform;
+    //transform.Translate({ -1, 0, -1 });
+    //transform.Scale(0.5);
+    //renderable_mesh2.SetTransformMatrix(transform);
 
 	return app.exec();
 }
