@@ -7,6 +7,7 @@
 
 namespace Rendering { class IRenderable; }
 
+
 namespace UI
 {
 	class MainWindow3D : public Klein::AbstractQt3DWindow

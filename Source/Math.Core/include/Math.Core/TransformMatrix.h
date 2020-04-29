@@ -10,6 +10,16 @@ class MATH_CORE_API TransformMatrix : public Matrix<double, 4>
 {
 public:
     using Matrix<double, 4>::Matrix;
+    using Matrix<double, 4>::operator();
+    using Matrix<double, 4>::operator*=;
+    using Matrix<double, 4>::operator+=;
+    using Matrix<double, 4>::operator/=;
+    using Matrix<double, 4>::operator=;
+    using Matrix<double, 4>::operator==;
+
+    TransformMatrix();
+    TransformMatrix(const double* ip_values);
+    TransformMatrix(const Matrix<double, 4>& i_mat);
     
     // multiples this matrix by another that rotates coordinates through i_angle deg about i_vector
     void Rotate(double i_angle, const Vector3D& i_vector);

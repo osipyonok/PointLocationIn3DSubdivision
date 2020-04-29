@@ -5,6 +5,10 @@
 #include <QObject>
 
 #include <memory>
+#include <vector>
+
+class QColor;
+class TransformMatrix;
 
 namespace Qt3DCore
 {
@@ -28,6 +32,13 @@ namespace Rendering
 		virtual std::unique_ptr<Qt3DCore::QTransform> GetTransformation() const = 0;
 
 		virtual std::unique_ptr<Qt3DCore::QComponent> GetRenderer() const = 0;
+
+        virtual void SetColor(const QColor& i_color) = 0;
+        virtual QColor GetColor() const = 0;
+        virtual void Transform(const TransformMatrix& i_transform) = 0;
+        virtual const TransformMatrix& GetTransform() const = 0;
+
+        virtual std::vector<IRenderable*> GetNestedRenderables() const { return {}; }
 
 
     Q_SIGNALS:

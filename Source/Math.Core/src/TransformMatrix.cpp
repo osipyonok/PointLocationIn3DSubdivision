@@ -6,6 +6,20 @@
 
 #include <cmath>
 
+TransformMatrix::TransformMatrix()
+{
+}
+
+TransformMatrix::TransformMatrix(const double* ip_values)
+    : Matrix<double, 4>(ip_values)
+{
+}
+
+TransformMatrix::TransformMatrix(const Matrix<double, 4>& i_mat)
+    : Matrix<double, 4>(i_mat)
+{
+}
+
 void TransformMatrix::Rotate(double i_angle, const Vector3D& i_vector)
 {
     Rotate(i_angle, i_vector.Get(0), i_vector.Get(1), i_vector.Get(2));

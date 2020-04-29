@@ -2,8 +2,11 @@
 
 #include <Math.Algos/API.h>
 
+#include <memory>
+
 class BoundingBox;
 class Mesh;
+class VoxelGrid;
 
 class MATH_ALGOS_API Voxelizer
 {
@@ -17,7 +20,7 @@ public:
     };
 
     void SetParams(const Params& i_params);
-    void Voxelize(const Mesh& i_mesh, Mesh& o_mesh);
+    std::unique_ptr<VoxelGrid> Voxelize(const Mesh& i_mesh, Mesh& o_mesh); //  Mesh& o_mesh is deprecated
 
 private:
     Params m_params;

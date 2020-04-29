@@ -19,6 +19,7 @@ namespace Rendering
         static RenderablesController& GetInstance();
 
         void AddRenderable(IRenderable& i_renderable);
+        void RemoveRenderable(Rendering::IRenderable* ip_renderable);
 
         std::list<IRenderable*> GetRenderables();
 

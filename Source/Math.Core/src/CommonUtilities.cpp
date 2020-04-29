@@ -287,8 +287,18 @@ double Distance(const Point3D& i_point, const Triangle& i_triangle)
     return std::sqrt(dist_sqr);
 }
 
+double Distance(const Point3D& i_point1, const Point3D& i_point2)
+{
+    return std::sqrt(DistanceSqr(i_point1, i_point2));
+}
+
 bool TriangleWithBBoxIntersection(const Triangle& i_triangle, const BoundingBox& i_bbox)
 {
+    if(i_bbox.ContainsPoint(i_triangle.GetPoint(0)) || i_bbox.ContainsPoint(i_triangle.GetPoint(1)) || i_bbox.ContainsPoint(i_triangle.GetPoint(2)))
+    {
+        return true;
+    }
+
     auto bbox_center = (i_bbox.GetMin() + i_bbox.GetMax()) / 2;
     auto half_delta = (i_bbox.GetMax() - i_bbox.GetMin()) / 2;
 

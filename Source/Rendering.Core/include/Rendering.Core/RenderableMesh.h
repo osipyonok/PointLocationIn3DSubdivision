@@ -30,10 +30,13 @@ namespace Rendering
 		std::unique_ptr<Qt3DCore::QTransform> GetTransformation() const override;
 		std::unique_ptr<Qt3DCore::QComponent> GetRenderer() const override;
 
+        QColor GetColor() const override;
+        RenderingStyle GetRenderingStyle() const;
+        const TransformMatrix& GetTransform() const;
 
-        void SetColor(QColor i_color);
+        void SetColor(const QColor& i_color) override;
         void SetRenderingStyle(RenderingStyle i_style);
-        void SetTransformMatrix(const TransformMatrix& i_transform);
+        void Transform(const TransformMatrix& i_transform);
 
 	private:
 		QPointer<Mesh> mp_mesh;

@@ -55,14 +55,8 @@ namespace Rendering
 
     std::unique_ptr<Qt3DCore::QTransform> RenderableMesh::GetTransformation() const
     {
-        auto p_transform = std::make_unique<Qt3DCore::QTransform>();
-
-        QMatrix4x4 matrix_4x4;
-        for (size_t i = 0; i < 4; ++i)
-            for (size_t j = 0; j < 4; ++j)
-                matrix_4x4(i, j) = m_transform(i, j);
-        
-        p_transform->setMatrix(matrix_4x4);    
+        auto p_transform = std::make_unique<Qt3DCore::QTransform>();    
+        p_transform->setMatrix(Rendering::Utilities::TransforMatrixToQMatrix4x4(m_transform));    
 
         return std::move(p_transform);
     }
@@ -87,7 +81,22 @@ namespace Rendering
         return std::move(p_renderer);
     }
 
-    void RenderableMesh::SetColor(QColor i_color)
+    QColor RenderableMesh::GetColor() const
+    {
+        return m_color;
+    }
+
+    RenderableMesh::RenderingStyle RenderableMesh::GetRenderingStyle() const
+    {
+        return m_rendering_style;
+    }
+
+    const TransformMatrix& RenderableMesh::GetTransform() const
+    {
+        return m_transform;
+    }
+
+    void RenderableMesh::SetColor(const QColor& i_color)
     {
         if (m_color == i_color)
             return;
@@ -105,12 +114,12 @@ namespace Rendering
         emit RenderableMaterialChanged();
     }
 
-    void RenderableMesh::SetTransformMatrix(const TransformMatrix& i_transform)
+    void RenderableMesh::Transform(const TransformMatrix& i_transform)
     {
-        if (i_transform == m_transform)
+        if (i_transform == TransformMatrix{})
             return;
 
-        m_transform = i_transform;
+        m_transform *= i_transform;
         emit RenderableTransformationChanged();
     }
 }

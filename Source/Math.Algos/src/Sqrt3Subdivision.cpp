@@ -16,7 +16,7 @@
 
 namespace
 {
-    auto _AddTriangleKeepNormal(Mesh& io_mesh, const Triangle& i_triangle, const Vector3D& i_old_normal)
+    inline auto _AddTriangleKeepNormal(Mesh& io_mesh, const Triangle& i_triangle, const Vector3D& i_old_normal)
     {
         if (i_triangle.GetNormal() == i_old_normal)
         {
@@ -40,7 +40,7 @@ namespace
         }
     }
 
-    auto _GetMinEdgeLengthSqr(Triangle* ip_triangle)
+    inline auto _GetMinEdgeLengthSqr(Triangle* ip_triangle)
     {
         auto edge1 = DistanceSqr(ip_triangle->GetPoint(0), ip_triangle->GetPoint(1));
         auto edge2 = DistanceSqr(ip_triangle->GetPoint(1), ip_triangle->GetPoint(2));
@@ -84,7 +84,13 @@ void SQRT3MeshSubdivider::Subdivide(Mesh& i_mesh) const
     std::vector<TriangleHandle> triangles;
     for (size_t i = 0; i < i_mesh.GetTrianglesCount(); ++i)
     {
-        triangles.emplace_back(i_mesh.GetTriangle(i));
+        if (auto p_triangle = i_mesh.GetTriangle(i).lock())
+        {
+            if (_GetMinEdgeLengthSqr(p_triangle.get()) > m_params.m_edge_length_threshold * m_params.m_edge_length_threshold)
+            {
+                triangles.emplace_back(i_mesh.GetTriangle(i));
+            }
+        }
     }
 
     std::map<std::pair<const MeshPoint*, const MeshPoint*>, std::vector<MeshPoint*>> adjacent_centroids;
@@ -160,7 +166,8 @@ void SQRT3MeshSubdivider::Subdivide(Mesh& i_mesh) const
                 triangles.emplace_back(p_new_triangle2);
         }
 
-        _SmoothOldPoints(i_mesh, old_points);
+        if(m_params.m_apply_smoothing)
+            _SmoothOldPoints(i_mesh, old_points);
     }
 
 }

@@ -1,4 +1,4 @@
-#include "MainWindow3D.h"
+#include "PL3DS.Gui/MainWindow3D.h"
 
 #include <Rendering.Core/IRenderable.h>
 
@@ -44,26 +44,26 @@ namespace
         QPointer<Qt3DCore::QComponent> mp_material;
         QPointer<Qt3DCore::QComponent> mp_transformation;
         QPointer<Qt3DCore::QComponent> mp_renderer;
-        
+
         QPointer<Qt3DCore::QEntity> mp_mesh;
     };
 }
 
 namespace UI
 {
-	struct MainWindow3D::Impl
-	{
-		QPointer<Qt3DRender::QCamera>              mp_camera;
-		QPointer<Klein::TrackballCameraController> mp_camera_controller;
-		QPointer<Klein::WBOITCompositor>           mp_compositor;
+    struct MainWindow3D::Impl
+    {
+        QPointer<Qt3DRender::QCamera>              mp_camera;
+        QPointer<Klein::TrackballCameraController> mp_camera_controller;
+        QPointer<Klein::WBOITCompositor>           mp_compositor;
 
         mutable std::unordered_map<const Rendering::IRenderable*, RenderableData> m_renderables_cache;
-	};
+    };
 
-	MainWindow3D::MainWindow3D(QWindow* ip_parent /*= nullptr*/)
-		: Klein::AbstractQt3DWindow(ip_parent)
-		, mp_impl(std::make_unique<Impl>())
-	{
+    MainWindow3D::MainWindow3D(QWindow* ip_parent /*= nullptr*/)
+        : Klein::AbstractQt3DWindow(ip_parent)
+        , mp_impl(std::make_unique<Impl>())
+    {
         using Rendering::RenderablesController;
         auto p_controller = &RenderablesController::GetInstance();
         bool is_connected = connect(p_controller, &RenderablesController::RenderableAdded, this, &MainWindow3D::_OnRenderableAdded);
@@ -82,169 +82,121 @@ namespace UI
         Q_ASSERT(is_connected);
 
         Q_UNUSED(is_connected);
-	}
+    }
 
-	MainWindow3D::~MainWindow3D() = default;
+    MainWindow3D::~MainWindow3D() = default;
 
-	void MainWindow3D::resizeEvent(QResizeEvent*)
-	{
-		if (mp_impl->mp_camera)
-			mp_impl->mp_camera->setAspectRatio(static_cast<float>(width()) / height());
+    void MainWindow3D::resizeEvent(QResizeEvent*)
+    {
+        if (mp_impl->mp_camera)
+            mp_impl->mp_camera->setAspectRatio(static_cast<float>(width()) / height());
 
-		if (mp_impl->mp_camera_controller)
-			mp_impl->mp_camera_controller->setWindowSize(size());
+        if (mp_impl->mp_camera_controller)
+            mp_impl->mp_camera_controller->setWindowSize(size());
 
-		if (mp_impl->mp_compositor)
-			mp_impl->mp_compositor->setSize(size());
-	}
+        if (mp_impl->mp_compositor)
+            mp_impl->mp_compositor->setSize(size());
+    }
 
-	Qt3DCore::QEntity* MainWindow3D::createSceneGraph()
-	{
-		auto rootEntity = new Qt3DCore::QEntity;
+    Qt3DCore::QEntity* MainWindow3D::createSceneGraph()
+    {
+        auto rootEntity = new Qt3DCore::QEntity;
 
         _CreateMeshes(rootEntity);
-
-		/*auto meshRenderer = new Qt3DRender::QMesh(rootEntity);
-		meshRenderer->setSource(
-			QUrl::fromLocalFile(QStringLiteral("C:/3dData/mesh/bunny.obj")));
-
-		auto opaqueMaterial = new Klein::UnlitMaterial(rootEntity);
-		opaqueMaterial->setBaseColor(QColor("teal"));
-		auto transparentMaterial0 = new Klein::WBOITMaterial(rootEntity);
-		transparentMaterial0->setBaseColor(QColor("orange"));
-		auto transparentMaterial1 = new Klein::WBOITMaterial(rootEntity);
-		transparentMaterial1->setBaseColor(QColor("gray"));
-		auto transparentMaterial2 = new Klein::WBOITMaterial(rootEntity);
-		transparentMaterial2->setBaseColor(QColor("lightskyblue"));
-		auto transparentMaterial3 = new Klein::WBOITMaterial(rootEntity);
-		transparentMaterial3->setBaseColor(QColor("orchid"));
-
-		auto transform0 = new Qt3DCore::QTransform(rootEntity);
-		transform0->setTranslation(QVector3D(1.0f, 0.0f, 1.0f));
-		transform0->setScale(0.5f);
-		auto transform1 = new Qt3DCore::QTransform(rootEntity);
-		transform1->setTranslation(QVector3D(1.0f, 0.0f, -1.0f));
-		transform1->setScale(0.5f);
-		auto transform2 = new Qt3DCore::QTransform(rootEntity);
-		transform2->setTranslation(QVector3D(-1.0f, 0.0f, -1.0f));
-		transform2->setScale(0.5f);
-		auto transform3 = new Qt3DCore::QTransform(rootEntity);
-		transform3->setTranslation(QVector3D(-1.0f, 0.0f, 1.0f));
-		transform3->setScale(0.5f);
-		auto transform4 = new Qt3DCore::QTransform(rootEntity);
-		transform4->setScale(0.5f);
-
-		// WBOIT material also needs an offscreen render target
-		// copypasted to below
-
-		auto opaqueMesh = new Qt3DCore::QEntity(rootEntity);
-		opaqueMesh->addComponent(opaqueMaterial);
-		opaqueMesh->addComponent(meshRenderer);
-		opaqueMesh->addComponent(transform4);
-		auto transparentMesh0 = new Qt3DCore::QEntity(rootEntity);
-		transparentMesh0->addComponent(transparentMaterial0);
-		transparentMesh0->addComponent(meshRenderer);
-		transparentMesh0->addComponent(transform0);
-		auto transparentMesh1 = new Qt3DCore::QEntity(rootEntity);
-		transparentMesh1->addComponent(transparentMaterial1);
-		transparentMesh1->addComponent(meshRenderer);
-		transparentMesh1->addComponent(transform1);
-		auto transparentMesh2 = new Qt3DCore::QEntity(rootEntity);
-		transparentMesh2->addComponent(transparentMaterial2);
-		transparentMesh2->addComponent(meshRenderer);
-		transparentMesh2->addComponent(transform2);
-		auto transparentMesh3 = new Qt3DCore::QEntity(rootEntity);
-		transparentMesh3->addComponent(transparentMaterial3);
-		transparentMesh3->addComponent(meshRenderer);
-		transparentMesh3->addComponent(transform3);*/
 
         // WBOIT material also needs an offscreen render target
         mp_impl->mp_compositor = new Klein::WBOITCompositor(rootEntity);
         mp_impl->mp_compositor->setSize(size());
 
-		mp_impl->mp_camera = new Qt3DRender::QCamera(rootEntity);
-		mp_impl->mp_camera->setPosition(QVector3D(2.0f, 0.0f, 0.0f));
-		mp_impl->mp_camera->setViewCenter(QVector3D(0, 0, 0));
-		auto aspect = (this->width() + 0.0f) / this->height();
-		mp_impl->mp_camera->lens()->setPerspectiveProjection(60.0f, aspect, 0.1f, 100.0f);
+        mp_impl->mp_camera = new Qt3DRender::QCamera(rootEntity);
+        mp_impl->mp_camera->setPosition(QVector3D(1.f, 1.f, 1.f));
+        mp_impl->mp_camera->setViewCenter(QVector3D(0, 0, 0));
+        auto aspect = (this->width() + 0.0f) / this->height();
+        mp_impl->mp_camera->lens()->setPerspectiveProjection(60.0f, aspect, 0.1f, 100.0f);
 
-		mp_impl->mp_camera_controller = new Klein::TrackballCameraController(rootEntity);
-		mp_impl->mp_camera_controller->setCamera(mp_impl->mp_camera);
-		mp_impl->mp_camera_controller->setWindowSize(size());
+        mp_impl->mp_camera_controller = new Klein::TrackballCameraController(rootEntity);
+        mp_impl->mp_camera_controller->setCamera(mp_impl->mp_camera);
+        mp_impl->mp_camera_controller->setWindowSize(size());
 
         //mp_impl->mp_scene = rootEntity;
 
-		return rootEntity;
-	}
+        return rootEntity;
+    }
 
-	Qt3DRender::QRenderSettings* MainWindow3D::createRenderSettings(Qt3DCore::QEntity* root)
-	{
-		auto rootNode = new Qt3DRender::QFrameGraphNode(root);
+    Qt3DRender::QRenderSettings* MainWindow3D::createRenderSettings(Qt3DCore::QEntity* root)
+    {
+        auto rootNode = new Qt3DRender::QFrameGraphNode(root);
 
-		auto surfaceSelector = new Qt3DRender::QRenderSurfaceSelector(rootNode);
-		surfaceSelector->setSurface(this);
+        auto surfaceSelector = new Qt3DRender::QRenderSurfaceSelector(rootNode);
+        surfaceSelector->setSurface(this);
 
-		auto viewport = new Qt3DRender::QViewport(surfaceSelector);
-		viewport->setNormalizedRect(QRect(0, 0, 1, 1));
+        auto viewport = new Qt3DRender::QViewport(surfaceSelector);
+        viewport->setNormalizedRect(QRect(0, 0, 1, 1));
 
-		// Clear default framebuffer
-		{
-			auto clearBuffers = new Qt3DRender::QClearBuffers(viewport);
-			clearBuffers->setBuffers(Qt3DRender::QClearBuffers::ColorDepthBuffer);
-			clearBuffers->setClearColor(QColor(255, 255, 255));
+        // Clear default framebuffer
+        {
+            auto clearBuffers = new Qt3DRender::QClearBuffers(viewport);
+            clearBuffers->setBuffers(Qt3DRender::QClearBuffers::ColorDepthBuffer);
+            clearBuffers->setClearColor(QColor(255, 255, 255));
 
-			new Qt3DRender::QNoDraw(clearBuffers);
-		}
+            new Qt3DRender::QNoDraw(clearBuffers);
+        }
 
-		// Render opaque entities first
-		{
-			auto cameraSelector = new Qt3DRender::QCameraSelector(viewport);
-			cameraSelector->setCamera(mp_impl->mp_camera);
+        // Render opaque entities first
+        {
+            auto cameraSelector = new Qt3DRender::QCameraSelector(viewport);
+            cameraSelector->setCamera(mp_impl->mp_camera);
 
-			Klein::BaseUnlitMaterial::attachRenderPassTo(cameraSelector);
-		}
+            Klein::BaseUnlitMaterial::attachRenderPassTo(cameraSelector);
+        }
 
-		// Render transparent entities
-		{
-			auto cameraSelector = new Qt3DRender::QCameraSelector(viewport);
-			cameraSelector->setCamera(mp_impl->mp_camera);
+        // Render transparent entities
+        {
+            auto cameraSelector = new Qt3DRender::QCameraSelector(viewport);
+            cameraSelector->setCamera(mp_impl->mp_camera);
 
-			// Render transparency to a composition target
-			{
-				auto target = mp_impl->mp_compositor->attachRenderTargetTo(cameraSelector);
+            // Render transparency to a composition target
+            {
+                auto target = mp_impl->mp_compositor->attachRenderTargetTo(cameraSelector);
 
-				// FIXME:
-				// Qt3D doesn't support blitting depth buffer
-				// Here we render opaque objects again to get depth buffer
-				// Could render to a fbo instead and copy to the default one
-				auto colorMask = new Qt3DRender::QColorMask;
-				colorMask->setRedMasked(false);
-				colorMask->setGreenMasked(false);
-				colorMask->setBlueMasked(false);
-				colorMask->setAlphaMasked(false);
-				auto renderStateSet = new Qt3DRender::QRenderStateSet(target);
-				renderStateSet->addRenderState(colorMask);
-				Klein::BaseUnlitMaterial::attachRenderPassTo(renderStateSet);
+                // FIXME:
+                // Qt3D doesn't support blitting depth buffer
+                // Here we render opaque objects again to get depth buffer
+                // Could render to a fbo instead and copy to the default one
+                auto colorMask = new Qt3DRender::QColorMask;
+                colorMask->setRedMasked(false);
+                colorMask->setGreenMasked(false);
+                colorMask->setBlueMasked(false);
+                colorMask->setAlphaMasked(false);
+                auto renderStateSet = new Qt3DRender::QRenderStateSet(target);
+                renderStateSet->addRenderState(colorMask);
+                Klein::BaseUnlitMaterial::attachRenderPassTo(renderStateSet);
 
-				Klein::WBOITMaterial::attachTranparentPassTo(target);
-			}
+                Klein::WBOITMaterial::attachTranparentPassTo(target);
+            }
 
-			// Composite transparency to the on-screen target
-			{
-				mp_impl->mp_compositor->attachCompositionPassTo(cameraSelector);
-			}
-		}
+            // Composite transparency to the on-screen target
+            {
+                mp_impl->mp_compositor->attachCompositionPassTo(cameraSelector);
+            }
+        }
 
-		auto settings = new Qt3DRender::QRenderSettings(root);
-		settings->setActiveFrameGraph(rootNode);
-		return settings;
-	}
+        auto settings = new Qt3DRender::QRenderSettings(root);
+        settings->setActiveFrameGraph(rootNode);
+        return settings;
+    }
 
     void MainWindow3D::_CreateMeshFor(const Rendering::IRenderable* ip_renderable, Qt3DCore::QEntity* ip_parent) const
     {
+        for (const auto p_nested_renderable : ip_renderable->GetNestedRenderables())
+            _CreateMeshFor(p_nested_renderable, ip_parent);
+
         auto p_renderer = ip_renderable->GetRenderer();
         auto p_material = ip_renderable->GetMaterial();
         auto p_transform = ip_renderable->GetTransformation();
+
+        if (!p_renderer || !p_material || !p_transform)
+            return;
 
         Q_ASSERT(p_renderer);
         Q_ASSERT(p_material);
@@ -289,6 +241,9 @@ namespace UI
 
     void MainWindow3D::_OnRenderableRemoved(const Rendering::IRenderable* ip_renderable)
     {
+        for (auto p_nested_renderable : ip_renderable->GetNestedRenderables())
+            _OnRenderableRemoved(p_nested_renderable);
+
         if (mp_impl->m_renderables_cache.find(ip_renderable) == mp_impl->m_renderables_cache.end())
             return;
 
@@ -302,6 +257,9 @@ namespace UI
 
     void MainWindow3D::_OnRenderableMaterialChanged(const Rendering::IRenderable* ip_renderable)
     {
+        for (auto p_nested_renderable : ip_renderable->GetNestedRenderables())
+            _OnRenderableMaterialChanged(p_nested_renderable);
+
         if (mp_impl->m_renderables_cache.find(ip_renderable) == mp_impl->m_renderables_cache.end())
             return;
 
@@ -321,6 +279,9 @@ namespace UI
 
     void MainWindow3D::_OnRenderableTransformationChanged(const Rendering::IRenderable* ip_renderable)
     {
+        for (auto p_nested_renderable : ip_renderable->GetNestedRenderables())
+            _OnRenderableTransformationChanged(p_nested_renderable);
+
         if (mp_impl->m_renderables_cache.find(ip_renderable) == mp_impl->m_renderables_cache.end())
             return;
 
@@ -340,6 +301,9 @@ namespace UI
 
     void MainWindow3D::_OnRenderableRendererChanged(const Rendering::IRenderable* ip_renderable)
     {
+        for (auto p_nested_renderable : ip_renderable->GetNestedRenderables())
+            _OnRenderableRendererChanged(p_nested_renderable);
+
         if (mp_impl->m_renderables_cache.find(ip_renderable) == mp_impl->m_renderables_cache.end())
             return;
 
@@ -357,11 +321,11 @@ namespace UI
         }
     }
 
-	void MainWindow3D::UpdateSceneGraph()
-	{
-		if (!isExposed() || !isVisible()) // suppress updates of invisible window
-			return;
-        
+    void MainWindow3D::UpdateSceneGraph()
+    {
+        if (!isExposed() || !isVisible()) // suppress updates of invisible window
+            return;
+
         // todo: update only changed renderables
         if (auto p_root = m_aspectEngine->rootEntity())
         {
@@ -396,5 +360,5 @@ namespace UI
                 }
             }
         }
-	}
+    }
 }

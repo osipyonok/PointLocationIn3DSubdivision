@@ -32,6 +32,8 @@ namespace
             if (!loader.LoadFile(i_src.toStdString()))
                 return false;
 
+            o_mesh.SetName(QFileInfo(i_src).fileName());
+
             for (const auto& loaded_mesh : loader.LoadedMeshes)
             {
                 std::vector<std::pair<Point3D, Vector3D>> point_normals;
@@ -87,6 +89,8 @@ namespace
             stlloader::Mesh stl;
             stlloader::parse_file(i_src.toStdString().c_str(), stl);
 
+            o_mesh.SetName(QString::fromStdString(stl.name));
+
             for (const auto& facet : stl.facets)
             {
                 auto point1 = o_mesh.AddPoint(facet.vertices[0].x, facet.vertices[0].y, facet.vertices[0].z);
@@ -124,7 +128,7 @@ namespace
         try
         {
             stlloader::Mesh stl;
-            stl.name = "PL3DS_STL";
+            stl.name = i_mesh.GetName().toStdString();
             
             for (size_t i = 0; i < i_mesh.GetTrianglesCount(); ++i)
             {

@@ -140,25 +140,6 @@ inline Matrix<T, N>& Matrix<T, N>::operator-=(const Matrix<T, N>& i_matrix)
     return *this;
 }
 
-/*
-template<typename T, size_t N>
-inline Matrix<T, N> Matrix<T, N>::operator+(const Matrix<T, N>& i_matrix) const
-{
-    Matrix<T, N> result(_GetDataPtr());
-    for (size_t i = 0; i < N * N; ++i)
-        result.Item(i) += i_matrix.Item(i);
-    return result;
-}
-
-template<typename T, size_t N>
-inline Matrix<T, N> Matrix<T, N>::operator-(const Matrix<T, N>& i_matrix) const
-{
-    Matrix<T, N> result(_GetDataPtr());
-    for (size_t i = 0; i < N * N; ++i)
-        result.Item(i) -= i_matrix.Item(i);
-    return result;
-}
-*/
 
 template<typename T, size_t N>
 inline void Matrix<T, N>::MakeIdentity()
@@ -195,31 +176,14 @@ inline Matrix<T, N>& Matrix<T, N>::operator/=(const TDivisor& i_divisor)
     return *this;
 }
 
-/*
-template<typename T, size_t N>
-template<typename TFactor>
-inline Matrix<T, N> Matrix<T, N>::operator*(const TFactor& i_factor) const
-{
-    for (size_t i = 0; i < N * N; ++i)
-        Item(i) *= i_factor;
-}
-
-template<typename T, size_t N>
-template<typename TDivisor>
-inline Matrix<T, N> Matrix<T, N>::operator/(const TDivisor& i_divisor) const
-{
-    for (size_t i = 0; i < N * N; ++i)
-        Item(i) /= i_divisor;
-}
-*/
-
 // free functions
 
 template<typename T, size_t N>
 inline Matrix<T, N> operator+(const Matrix<T, N>& i_lhs, const Matrix<T, N>& i_rhs)
 {
     Matrix<T, N> result(i_lhs);
-    result += i_rhs;
+    for (size_t i = 0; i < N * N; ++i)
+        result.Item(i) += i_rhs.Item(i);
     return result;
 }
 
@@ -227,7 +191,8 @@ template<typename T, size_t N>
 inline Matrix<T, N> operator-(const Matrix<T, N>& i_lhs, const Matrix<T, N>& i_rhs)
 {
     Matrix<T, N> result(i_lhs);
-    result -= i_rhs;
+    for (size_t i = 0; i < N * N; ++i)
+        result.Item(i) -= i_rhs.Item(i);
     return result;
 }
 
@@ -235,7 +200,8 @@ template<typename T, size_t N>
 inline Matrix<T, N> operator*(const Matrix<T, N>& i_lhs, const T& i_rhs)
 {
     Matrix<T, N> result(i_lhs);
-    result *= i_rhs;
+    for (size_t i = 0; i < N * N; ++i)
+        result.Item(i) *= i_rhs;
     return result;
 }
 
@@ -249,7 +215,8 @@ template<typename T, size_t N>
 inline Matrix<T, N> operator/(const Matrix<T, N>& i_lhs, const T& i_rhs)
 {
     Matrix<T, N> result(i_lhs);
-    result /= i_rhs;
+    for (size_t i = 0; i < N * N; ++i)
+        result.Item(i) /= i_rhs;
     return result;
 }
 

@@ -29,7 +29,7 @@ private:
 
 
 // build functor: void(Node, Args...). params: root node and extra args needed for construction
-// query functor: void(Result&, Args...). params: result output parameter, extra args
+// query functor: void(Node, Result&, Args...). params: result output parameter, extra args
 template<typename Info, typename BuildFunctor, typename QueryFunctor>
 class GenericKDTree final
 {
@@ -42,6 +42,8 @@ public:
     template<typename Result, typename... Args>
     void Query(Result& o_result, Args&&... i_args);
 
+    NodeType& GetRoot() { return m_root; }
+
 private:
     NodeType m_root;
 };
@@ -49,7 +51,7 @@ private:
 
 
 template<typename Info>
-inline KDTreeNode<Info>::NodeType& KDTreeNode<Info>::GetLeftChild()
+typename KDTreeNode<Info>::NodeType& KDTreeNode<Info>::GetLeftChild()
 {
     if (!HasLeftChild())
         mp_left_child = std::make_unique<NodeType>();
@@ -58,7 +60,7 @@ inline KDTreeNode<Info>::NodeType& KDTreeNode<Info>::GetLeftChild()
 }
 
 template<typename Info>
-inline KDTreeNode<Info>::NodeType& KDTreeNode<Info>::GetRightChild()
+inline typename KDTreeNode<Info>::NodeType& KDTreeNode<Info>::GetRightChild()
 {
     if (!HasRightChild())
         mp_right_child = std::make_unique<NodeType>();
@@ -69,13 +71,13 @@ inline KDTreeNode<Info>::NodeType& KDTreeNode<Info>::GetRightChild()
 template<typename Info>
 inline bool KDTreeNode<Info>::HasLeftChild() const
 {
-    return mp_left_child;
+    return mp_left_child != nullptr;
 }
 
 template<typename Info>
 inline bool KDTreeNode<Info>::HasRightChild() const
 {
-    return mp_right_child;
+    return mp_right_child != nullptr;
 }
 
 template<typename Info>

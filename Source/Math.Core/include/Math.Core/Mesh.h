@@ -15,12 +15,17 @@ class Vector3D;
 
 using TriangleHandle = std::weak_ptr<MeshTriangle>;
 
+class QString;
+
 class MATH_CORE_API Mesh final : public QObject
 {
 	Q_OBJECT
+    Q_DISABLE_COPY(Mesh)
 
 public:
 	Mesh();
+    Mesh(Mesh&& i_mesh);
+
 	~Mesh() override;
 
     MeshPoint* AddPoint(const Point3D& i_point);
@@ -47,6 +52,9 @@ public:
 
     size_t GetPointsCount() const;
     size_t GetTrianglesCount() const;
+
+    const QString& GetName() const;
+    void SetName(const QString& i_name) const;
 
 private:
 	struct Impl;

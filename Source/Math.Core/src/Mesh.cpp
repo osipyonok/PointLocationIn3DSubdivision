@@ -374,12 +374,19 @@ struct Mesh::Impl
 {
     PointContainer m_points;
     TriangleContainer m_triangles;
+    QString m_name;
 };
 
 
 Mesh::Mesh()
     : mp_impl(std::make_unique<Impl>())
 {
+}
+
+Mesh::Mesh(Mesh&& i_mesh)
+    : Mesh()
+{
+    std::swap(mp_impl, i_mesh.mp_impl);
 }
 
 Mesh::~Mesh() = default;
@@ -512,4 +519,14 @@ size_t Mesh::GetPointsCount() const
 size_t Mesh::GetTrianglesCount() const
 {
     return mp_impl->m_triangles.GetTrianglesCount();
+}
+
+const QString& Mesh::GetName() const
+{
+    return mp_impl->m_name;
+}
+
+void Mesh::SetName(const QString& i_name) const
+{
+    mp_impl->m_name = i_name;
 }

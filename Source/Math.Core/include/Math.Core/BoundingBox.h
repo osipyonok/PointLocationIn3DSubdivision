@@ -6,10 +6,11 @@
 
 class Point3D;
 
-class MATH_CORE_API BoundingBox final
+class MATH_CORE_API BoundingBox
 {
 public:
     BoundingBox() = default;
+    virtual ~BoundingBox() = default;
 
     bool IsValid() const;
 

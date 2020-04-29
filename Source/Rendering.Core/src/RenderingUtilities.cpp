@@ -5,8 +5,10 @@
 #include <Math.Core/MeshTriangle.h>
 #include <Math.Core/Point3D.h>
 #include <Math.Core/Vector3D.h>
+#include <Math.Core/TransformMatrix.h>
 
 #include <QByteArray>
+#include <QMatrix4x4>
 
 #include <Qt3DRender/QAttribute>
 #include <Qt3DRender/QGeometry>
@@ -133,6 +135,18 @@ namespace Rendering
             p_geomerty->addAttribute(p_index_attribute);
 
             return std::move(p_geomerty);
+        }
+
+
+        QMatrix4x4 TransforMatrixToQMatrix4x4(const TransformMatrix& i_matrix)
+        {
+            QMatrix4x4 result;
+
+            for (size_t i = 0; i < 4; ++i)
+                for (size_t j = 0; j < 4; ++j)
+                    result(i, j) = i_matrix(i, j);
+
+            return result;
         }
     }
 }

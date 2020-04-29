@@ -51,6 +51,15 @@ namespace Rendering
         Q_UNUSED(is_connected);
     }
 
+    void RenderablesController::RemoveRenderable(Rendering::IRenderable* ip_renderable)
+    {
+        if (!m_renderables.contains(ip_renderable))
+            return;
+
+        m_renderables.remove(ip_renderable);
+        emit RenderableRemoved(ip_renderable);
+    }
+
     std::list<IRenderable*> RenderablesController::GetRenderables()
     {
         std::list<IRenderable*> list;

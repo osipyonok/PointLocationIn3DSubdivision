@@ -8,13 +8,15 @@
 #include <Math.Core/MeshTriangle.h>
 #include <Math.Core/Point3D.h>
 
+#include <Math.DataStructures/VoxelGrid.h>
+
 
 void Voxelizer::SetParams(const Params& i_params)
 {
     m_params = i_params;
 }
 
-void Voxelizer::Voxelize(const Mesh& i_mesh, Mesh& o_mesh)
+std::unique_ptr<VoxelGrid> Voxelizer::Voxelize(const Mesh& i_mesh, Mesh& o_mesh)
 {
     BoundingBox bbox;
     for (int i = 0; i < i_mesh.GetPointsCount(); ++i)
@@ -22,9 +24,15 @@ void Voxelizer::Voxelize(const Mesh& i_mesh, Mesh& o_mesh)
         bbox.AddPoint(*i_mesh.GetPoint(i));
     }
 
-    const auto cnt_x = static_cast<int>(std::max(1., std::ceil(bbox.GetDeltaX() / m_params.m_resolution_x))) + 1;
-    const auto cnt_y = static_cast<int>(std::max(1., std::ceil(bbox.GetDeltaY() / m_params.m_resolution_y))) + 1;
-    const auto cnt_z = static_cast<int>(std::max(1., std::ceil(bbox.GetDeltaZ() / m_params.m_resolution_z))) + 1;
+    
+
+    const auto cnt_x = static_cast<size_t>(std::max(1., std::ceil((bbox.GetDeltaX() + m_params.m_precision) / m_params.m_resolution_x)));
+    const auto cnt_y = static_cast<size_t>(std::max(1., std::ceil((bbox.GetDeltaY() + m_params.m_precision) / m_params.m_resolution_y)));
+    const auto cnt_z = static_cast<size_t>(std::max(1., std::ceil((bbox.GetDeltaZ() + m_params.m_precision) / m_params.m_resolution_z)));
+
+    auto p_voxel_grid = std::make_unique<VoxelGrid>(std::array<double, 3>{ m_params.m_resolution_x, m_params.m_resolution_y, m_params.m_resolution_z },
+                                                    std::array<size_t, 3>{ cnt_x, cnt_y, cnt_z },
+                                                    bbox);
 
     std::vector<std::vector<std::vector<bool>>> is_present(cnt_x, std::vector<std::vector<bool>>(cnt_y, std::vector<bool>(cnt_z, false)));
 
@@ -88,20 +96,40 @@ void Voxelizer::Voxelize(const Mesh& i_mesh, Mesh& o_mesh)
             triangle_bbox.AddPoint(point2);
             triangle_bbox.AddPoint(point3);        
 
-            auto min_id_x = (int)std::floor((triangle_bbox.GetMin() - bbox.GetMin())[0] / step[0]);
-            auto min_id_y = (int)std::floor((triangle_bbox.GetMin() - bbox.GetMin())[1] / step[1]);
-            auto min_id_z = (int)std::floor((triangle_bbox.GetMin() - bbox.GetMin())[2] / step[2]);
+            auto bbox_min = bbox.GetMin();
+            auto tria_min = triangle_bbox.GetMin();
+            auto tria_max = triangle_bbox.GetMax();
+            auto min_diff = tria_min - bbox_min;
+            auto max_diff = tria_max - bbox_min;
 
-            auto max_id_x = (int)std::ceil((triangle_bbox.GetMax() - bbox.GetMin())[0] / step[0]);
-            auto max_id_y = (int)std::ceil((triangle_bbox.GetMax() - bbox.GetMin())[1] / step[1]);
-            auto max_id_z = (int)std::ceil((triangle_bbox.GetMax() - bbox.GetMin())[2] / step[2]);
+            auto min_id_x = std::floorl(min_diff[0] / step[0]);
+            auto min_id_y = std::floorl(min_diff[1] / step[1]);
+            auto min_id_z = std::floorl(min_diff[2] / step[2]);
+
+            if (qFuzzyCompare(min_id_x * m_params.m_resolution_x, min_diff[0]) && min_id_x > 0)
+                --min_id_x;
+            if (qFuzzyCompare(min_id_y * m_params.m_resolution_y, min_diff[1]) && min_id_y > 0)
+                --min_id_y;
+            if (qFuzzyCompare(min_id_z * m_params.m_resolution_z, min_diff[2]) && min_id_z > 0)
+                --min_id_z;
+
+            auto max_id_x = std::floorl(max_diff[0] / step[0]);
+            auto max_id_y = std::floorl(max_diff[1] / step[1]);
+            auto max_id_z = std::floorl(max_diff[2] / step[2]);
+
+            if (qFuzzyCompare(max_id_x * m_params.m_resolution_x, max_diff[0]) && max_id_x < cnt_x)
+                ++max_id_x;
+            if (qFuzzyCompare(max_id_y * m_params.m_resolution_y, max_diff[1]) && max_id_y < cnt_y)
+                ++max_id_y;
+            if (qFuzzyCompare(max_id_z * m_params.m_resolution_z, max_diff[2]) && max_id_z < cnt_z)
+                ++max_id_z;
 
             // probably can be done faster with bfs
-            for (int x = min_id_x; x <= max_id_x; ++x)
+            for (size_t x = min_id_x; x <= max_id_x; ++x)
             {
-                for (int y = min_id_y; y <= max_id_y; ++y)
+                for (size_t y = min_id_y; y <= max_id_y; ++y)
                 {
-                    for (int z = min_id_z; z <= max_id_z; ++z)
+                    for (size_t z = min_id_z; z <= max_id_z; ++z)
                     {
                         BoundingBox voxel;
                         voxel.AddPoint(Point3D(x * m_params.m_resolution_x, y * m_params.m_resolution_y, z * m_params.m_resolution_z) + bbox.GetMin());
@@ -110,10 +138,14 @@ void Voxelizer::Voxelize(const Mesh& i_mesh, Mesh& o_mesh)
                         if (TriangleWithBBoxIntersection(*p_triangle, voxel))
                         {
                             add_cube_if_not_exists(x, y, z);
+                            auto p_voxel = p_voxel_grid->GetOrCreateVoxel(std::array<size_t, 3>{ x, y, z });
+                            p_voxel->AddTriangle(p_triangle.get());
                         }
                     }
                 }
             }
         }
     }
+
+    return std::move(p_voxel_grid);
 }

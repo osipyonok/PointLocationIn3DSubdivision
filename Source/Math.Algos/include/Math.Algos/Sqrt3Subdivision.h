@@ -9,6 +9,7 @@ class MATH_ALGOS_API SQRT3MeshSubdivider final
 public:
     struct Params
     {
+        bool m_apply_smoothing = true;
         double m_edge_length_threshold = 10;
     };
 

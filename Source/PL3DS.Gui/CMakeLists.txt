@@ -7,13 +7,14 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
 
-file(GLOB Headers "*.h")
-file(GLOB Sources "*.cpp")
-file(GLOB Resources "*.qrc")
+file(GLOB_RECURSE Headers   "include/${ProjectName}/*")
+file(GLOB_RECURSE Sources   "src/*.cpp")
+file(GLOB_RECURSE Forms     "src/*.ui")
+file(GLOB_RECURSE Resoutces "resources/*.qrc")
 
-
-add_executable(${ProjectName} ${Headers} ${Sources} ${Resources})	
+add_executable(${ProjectName} ${Headers} ${Sources} ${Forms} ${Resources})    
 set_target_properties(PL3DS.Gui PROPERTIES OUTPUT_NAME "${ProjectName}")
 
 #Qt
@@ -50,10 +51,17 @@ target_link_libraries(${ProjectName}
                       #Internal
                       Math.Core
                       Math.Algos
-					  Math.IO
+                      Math.DataStructures
+                      Math.IO
                       Rendering.Core
                       Rendering.Main
 
                       #3rd party
                       Klein::Klein
                       )
+
+target_include_directories(${ProjectName} PUBLIC 
+                           "${CMAKE_CURRENT_SOURCE_DIR}/include"
+                           "${CMAKE_BINARY_DIR}/include")
+                      
+
