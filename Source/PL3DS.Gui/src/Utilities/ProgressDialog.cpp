@@ -41,8 +41,6 @@ namespace UI
         auto p_future_watcher = std::make_unique<QFutureWatcher<void>>();
         
         bool is_connected = false;
-        is_connected = QObject::connect(p_future_watcher.get(), &QFutureWatcherBase::started, p_dialog.get(), &QDialog::exec);
-        Q_ASSERT(is_connected);
         is_connected = QObject::connect(p_future_watcher.get(), &QFutureWatcherBase::finished, p_dialog.get(), &QDialog::close);
         Q_ASSERT(is_connected);
 
@@ -55,7 +53,7 @@ namespace UI
         p_future_watcher->setFuture(QtConcurrent::run(i_func));
 
         p_future_watcher.release();
-        p_dialog.release();
+        p_dialog.release()->exec();
 
         Q_UNUSED(is_connected);
     }

@@ -66,35 +66,42 @@ namespace
             m_meshes.erase(it);
     }
 
-    void _DoLoadInThreadImpl(const QString& i_path)
+    void _DoLoadInThreadImpl(const QStringList& i_paths)
     {
-        auto loader = [i_path]
+        std::vector<std::pair<Rendering::IRenderable*, QString>> new_renderables;
+        auto loader = [&]
         {
-            auto p_mesh = std::make_unique<Mesh>();
-            auto result = ReadMesh(i_path, *p_mesh);
-            if (result)
+            for (const auto& path : i_paths)
             {
-                auto p_renderable = Rendering::CreateRenderableFor(*p_mesh);
-                p_renderable->setParent(p_mesh.get());
-                p_renderable->SetColor(Utilities::GenerateRandomColor());
-                g_renderable_to_mesh_map[p_renderable.get()] = p_mesh.get();
-                RenderablesModel::GetInstance().AddRenderable(p_renderable.get(), p_mesh->GetName());
-                p_renderable.release();
-                g_mesh_data_base.AddMesh(std::move(p_mesh));
+                auto p_mesh = std::make_unique<Mesh>();
+                auto result = ReadMesh(path, *p_mesh);
+                if (result)
+                {
+                    auto p_renderable = Rendering::CreateRenderableFor(*p_mesh);
+                    p_renderable->setParent(p_mesh.get());
+                    p_renderable->SetColor(Utilities::GenerateRandomColor());
+                    g_renderable_to_mesh_map[p_renderable.get()] = p_mesh.get();
+                    new_renderables.emplace_back(p_renderable.get(), p_mesh->GetName());
+                    p_renderable.release();
+                    g_mesh_data_base.AddMesh(std::move(p_mesh));
+                }
             }
         };
 
         UI::RunInThread(loader, "Load Mesh");
+
+        for (const auto& renderable : new_renderables)
+            RenderablesModel::GetInstance().AddRenderable(renderable.first, renderable.second);
     }
 
     void _DoLoadMesh()
     {
-        auto file_path = QFileDialog::getOpenFileName(nullptr, "Load Mesh", QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation), 
-                                                      "Model files (*.stl *.obj)");
-        if (file_path.isEmpty())
+        auto file_paths = QFileDialog::getOpenFileNames(nullptr, "Load Mesh", QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation), 
+                                                        "Model files (*.stl *.obj)");
+        if (file_paths.isEmpty())
             return;
 
-        _DoLoadInThreadImpl(file_path);
+        _DoLoadInThreadImpl(file_paths);
     }
 
     void _DoRemoveSelected()
@@ -153,7 +160,8 @@ namespace
         Voxelizer::Params params;
         params.m_resolution_x = params.m_resolution_y = params.m_resolution_z = 0.2;
 
-        auto voxelizer = [=]
+        Rendering::IRenderable* p_new_renderable = nullptr;
+        auto voxelizer = [&]
         {
             Voxelizer voxelizer;
             voxelizer.SetParams(params);
@@ -165,10 +173,12 @@ namespace
                 auto p_renderable_grid = Rendering::CreateRenderableFor(*p_voxel_grid);
                 p_renderable_grid->Transform(p_current_renderable->GetTransform());
                 p_renderable_grid->SetRenderingStyle(Rendering::RenderableVoxelGrid::RenderingStyle::Transparent);
-                RenderablesModel::GetInstance().AddRenderable(p_renderable_grid.get(), p_mesh->GetName() + QStringLiteral("_Voxelization"));
+                p_new_renderable = p_renderable_grid.get();
                 g_renderable_grids.emplace_back(std::move(p_renderable_grid));
             }
         };
+
+        RenderablesModel::GetInstance().AddRenderable(p_new_renderable, p_mesh->GetName() + QStringLiteral("_Voxelization"));
 
         UI::RunInThread(voxelizer, "Voxelization");
     }
@@ -388,6 +398,6 @@ namespace Actions
 
     void RunLoadForMesh(const QString& i_file)
     {
-        _DoLoadInThreadImpl(i_file);
+        _DoLoadInThreadImpl({ i_file });
     }
 }
