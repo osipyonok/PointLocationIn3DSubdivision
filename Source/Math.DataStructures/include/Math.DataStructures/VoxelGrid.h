@@ -36,6 +36,7 @@ public:
     VoxelGrid(const std::array<double, 3>& i_voxel_size, const std::array<size_t, 3>& i_num_voxels, const BoundingBox& i_bbox);
 
     const std::array<double, 3>& GetVoxelSize() const;
+    const std::array<size_t, 3>& GetNumVoxels() const;
     Voxel* GetOrCreateVoxel(const std::array<size_t, 3>& i_coordinates);
     const Voxel* GetVoxel(const std::array<size_t, 3>& i_coordinates) const;
     std::vector<const Voxel*> GetExistingVoxels() const;

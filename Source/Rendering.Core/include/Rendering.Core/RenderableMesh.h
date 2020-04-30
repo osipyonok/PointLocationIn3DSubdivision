@@ -30,6 +30,8 @@ namespace Rendering
 		std::unique_ptr<Qt3DCore::QTransform> GetTransformation() const override;
 		std::unique_ptr<Qt3DCore::QComponent> GetRenderer() const override;
 
+        Mesh* GetMesh() const;
+
         QColor GetColor() const override;
         RenderingStyle GetRenderingStyle() const;
         const TransformMatrix& GetTransform() const;

@@ -223,6 +223,7 @@ int main(int argc, char* argv[])
     main_widget_params.mp_toggle_visibility_action = Actions::GetHideShowSelectedAction();
     main_widget_params.mp_toggle_view_mode_adction = Actions::GetToggleViewModeAction();
     main_widget_params.mp_translate_action = Actions::GetTranslateAction();
+    main_widget_params.mp_localize_action = Actions::GetLocalizeAction();
 
 
     //auto p_window = new MainWindow;

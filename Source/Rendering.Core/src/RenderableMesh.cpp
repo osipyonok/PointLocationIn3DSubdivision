@@ -81,6 +81,11 @@ namespace Rendering
         return std::move(p_renderer);
     }
 
+    Mesh* RenderableMesh::GetMesh() const
+    {
+        return mp_mesh.data();
+    }
+
     QColor RenderableMesh::GetColor() const
     {
         return m_color;

@@ -6,15 +6,17 @@
 
 class Point3D;
 class Mesh;
+class TransformMatrix;
 class VoxelGrid;
 
 class PointLocalizerVoxelized
 {
+public:
+
     enum class ReturnCode
     {
         Ok,
         VoxelizationWasNotBuild,
-        Error,
     };
 
     struct Params
@@ -24,18 +26,18 @@ class PointLocalizerVoxelized
         double m_voxel_size_z = 1;
     };
 
+    MATH_ALGOS_API PointLocalizerVoxelized();
+    MATH_ALGOS_API ~PointLocalizerVoxelized();
+
     // returns mesh index
-    size_t AddMesh(const Mesh& i_mesh);
+    MATH_ALGOS_API size_t AddMesh(const Mesh& i_mesh, const TransformMatrix& i_transformation);
     
-    void Build(const Params& i_params);
+    MATH_ALGOS_API void Build(const Params& i_params);
 
     // returns index of mesh or std::numeric_limits<size_t>::max() if point is outside
-    size_t Localize(const Point3D& i_point, ReturnCode* op_return_code = nullptr);
+    MATH_ALGOS_API size_t Localize(const Point3D& i_point, ReturnCode* op_return_code = nullptr);
 
 private:
-#pragma warning(push)
-#pragma warning(disable: 4251)
     struct Impl;
     std::unique_ptr<Impl> mp_impl;
-#pragma warning(pop)
 };

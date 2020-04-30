@@ -3,6 +3,7 @@
 #include "PL3DS.Gui/RenderablesModel.h"
 
 #include "PL3DS.Gui/Dialogs/AddPointDialog.h"
+#include "PL3DS.Gui/Dialogs/LocalizeDialog.h"
 #include "PL3DS.Gui/Dialogs/TranslateDialog.h"
 
 #include "PL3DS.Gui/Utilities/GeneralUtilities.h"
@@ -280,6 +281,16 @@ namespace
             p_current_renderable->Transform(transform);
         }
     }
+
+    void _DoLocalize()
+    {
+        auto p_dialog = std::make_unique<UI::LocalizeDialog>();
+        p_dialog->setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
+        p_dialog->setWindowFlag(Qt::WindowType::WindowCloseButtonHint, false);
+        p_dialog->setWindowFlag(Qt::WindowType::WindowMinimizeButtonHint, false);
+        p_dialog->setWindowFlag(Qt::WindowType::WindowContextHelpButtonHint, false);
+        p_dialog.release()->show();
+    }
 }
 
 namespace Actions
@@ -390,6 +401,20 @@ namespace Actions
             mp_action = std::make_unique<QAction>();
             mp_action->setText("Translate");
             bool is_connected = QObject::connect(mp_action.get(), &QAction::triggered, &_DoTranslate);
+            Q_ASSERT(is_connected);
+            Q_UNUSED(is_connected);
+        }
+        return mp_action.get();
+    }
+
+    QAction* GetLocalizeAction()
+    {
+        static std::unique_ptr<QAction> mp_action;
+        if (!mp_action)
+        {
+            mp_action = std::make_unique<QAction>();
+            mp_action->setText("Localize");
+            bool is_connected = QObject::connect(mp_action.get(), &QAction::triggered, &_DoLocalize);
             Q_ASSERT(is_connected);
             Q_UNUSED(is_connected);
         }

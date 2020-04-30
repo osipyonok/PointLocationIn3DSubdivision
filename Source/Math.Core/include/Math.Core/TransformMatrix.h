@@ -44,4 +44,6 @@ public:
 
     // scales coordinates by the components of i_vector
     void Scale(const Vector3D& i_vector);
+
+    void ApplyTransformation(Point3D& io_point) const;
 };

@@ -39,6 +39,11 @@ const std::array<double, 3>& VoxelGrid::GetVoxelSize() const
     return m_voxel_size;
 }
 
+const std::array<size_t, 3>& VoxelGrid::GetNumVoxels() const
+{
+    return m_num_voxels;
+}
+
 Voxel* VoxelGrid::GetOrCreateVoxel(const std::array<size_t, 3>& i_coordinates)
 {
     auto index = GetVoxelIndexFromCoordinates(i_coordinates);

@@ -24,6 +24,7 @@ namespace Actions
     QAction* GetVoxelizeAction();
     QAction* GetToggleViewModeAction();
     QAction* GetTranslateAction();
+    QAction* GetLocalizeAction();
 
 
     void RunLoadForMesh(const QString& i_file);

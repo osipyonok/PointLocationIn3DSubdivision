@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>985</width>
+    <width>1317</width>
     <height>573</height>
    </rect>
   </property>
@@ -109,6 +109,13 @@
         <widget class="QPushButton" name="mp_btn_build_kd_tree">
          <property name="text">
           <string>Build KD-tree</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="mp_btn_localize">
+         <property name="text">
+          <string>Localize</string>
          </property>
         </widget>
        </item>

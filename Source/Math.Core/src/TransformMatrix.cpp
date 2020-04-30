@@ -111,3 +111,37 @@ void TransformMatrix::Scale(const Vector3D& i_vector)
 {
     Scale(i_vector.Get(0), i_vector.Get(1), i_vector.Get(2));
 }
+
+void TransformMatrix::ApplyTransformation(Point3D& io_point) const
+{
+    auto x = io_point.GetX() * Item(0, 0)
+           + io_point.GetY() * Item(0, 1)
+           + io_point.GetZ() * Item(0, 2)
+           + Item(0, 3);
+
+    auto y = io_point.GetX() * Item(1, 0)
+           + io_point.GetY() * Item(1, 1)
+           + io_point.GetZ() * Item(1, 2)
+           + Item(1, 3);
+
+    auto z = io_point.GetX() * Item(2, 0)
+           + io_point.GetY() * Item(2, 1)
+           + io_point.GetZ() * Item(2, 2)
+           + Item(2, 3);
+
+    auto w = io_point.GetX() * Item(3, 0)
+           + io_point.GetY() * Item(3, 1)
+           + io_point.GetZ() * Item(3, 2)
+           + Item(3, 3);
+
+    io_point.SetX(x);
+    io_point.SetY(y);
+    io_point.SetZ(z);
+
+    if (!qFuzzyCompare(w, 1.))
+    {
+        io_point.GetX() /= w;
+        io_point.GetY() /= w;
+        io_point.GetZ() /= w;
+    }
+}
