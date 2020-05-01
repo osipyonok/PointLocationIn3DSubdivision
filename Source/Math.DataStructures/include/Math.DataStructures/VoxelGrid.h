@@ -40,6 +40,7 @@ public:
     Voxel* GetOrCreateVoxel(const std::array<size_t, 3>& i_coordinates);
     const Voxel* GetVoxel(const std::array<size_t, 3>& i_coordinates) const;
     std::vector<const Voxel*> GetExistingVoxels() const;
+    bool PointInsideVoxelization(const Point3D& i_point) const;
     
     std::array<size_t, 3> GetCoordinatesForPoint(const Point3D& i_point) const;
 

@@ -2,6 +2,8 @@
 
 #include <Math.Core/Point3D.h>
 
+#include <QtGlobal>
+
 Voxel::Voxel(const std::array<size_t, 3>& i_coords, const Point3D& i_min_corner, const Point3D& i_max_corner)
     : BoundingBox()
     , m_coordinates(i_coords)
@@ -60,7 +62,9 @@ const Voxel* VoxelGrid::GetVoxel(const std::array<size_t, 3>& i_coordinates) con
 {
     auto index = GetVoxelIndexFromCoordinates(i_coordinates);
     auto it = m_voxels.find(index);
-    return it == m_voxels.end() ? nullptr : &it->second;
+    if (it == m_voxels.end())
+        return nullptr;
+    return &it->second;
 }
 
 std::vector<const Voxel*> VoxelGrid::GetExistingVoxels() const
@@ -79,17 +83,27 @@ std::vector<const Voxel*> VoxelGrid::GetExistingVoxels() const
     return std::move(result);
 }
 
+bool VoxelGrid::PointInsideVoxelization(const Point3D& i_point) const
+{
+    return m_bbox.ContainsPoint(i_point);
+}
+
 std::array<size_t, 3> VoxelGrid::GetCoordinatesForPoint(const Point3D& i_point) const
 {
     auto min_point = m_bbox.GetMin();
     auto diff = i_point - min_point;
 
-    return 
-    {
-        static_cast<size_t>(std::lroundl(diff.GetX() / m_voxel_size[0])),
-        static_cast<size_t>(std::lroundl(diff.GetY() / m_voxel_size[1])),
-        static_cast<size_t>(std::lroundl(diff.GetZ() / m_voxel_size[2]))
-    };
+    auto x = static_cast<size_t>(std::lroundl(diff.GetX() / m_voxel_size[0]));
+    auto y = static_cast<size_t>(std::lroundl(diff.GetY() / m_voxel_size[1]));
+    auto z = static_cast<size_t>(std::lroundl(diff.GetZ() / m_voxel_size[2]));
+    if (x >= m_num_voxels[0])
+        x = m_num_voxels[0] - 1;
+    if (y >= m_num_voxels[1])
+        y = m_num_voxels[1] - 1;
+    if (z >= m_num_voxels[2])
+        z = m_num_voxels[2] - 1;
+
+    return { x, y, z };
 }
 
 size_t VoxelGrid::GetVoxelIndexFromCoordinates(const std::array<size_t, 3>& i_coordinates) const

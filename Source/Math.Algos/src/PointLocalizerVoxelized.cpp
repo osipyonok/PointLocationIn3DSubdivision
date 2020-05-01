@@ -103,7 +103,11 @@ size_t PointLocalizerVoxelized::Localize(const Point3D& i_point, ReturnCode* op_
     if (op_return_code)
         *op_return_code = ReturnCode::Ok;
 
+    if(!mp_impl->mp_voxelization->PointInsideVoxelization(i_point))
+        return std::numeric_limits<size_t>::max();
+
     auto coordinates = mp_impl->mp_voxelization->GetCoordinatesForPoint(i_point);
+
     for (size_t x_coord = coordinates[0]; x_coord <= mp_impl->mp_voxelization->GetNumVoxels()[0]; ++x_coord)
     {
         const std::array<size_t, 3> current_coords = { x_coord, coordinates[1], coordinates[2] };
@@ -122,7 +126,14 @@ size_t PointLocalizerVoxelized::Localize(const Point3D& i_point, ReturnCode* op_
             }
 
             if (p_nearest_triangle)
-                return mp_impl->m_triangles_to_mesh_map[p_nearest_triangle];
+            {
+                auto loc_result = GetPointTriangleRelativeLocation(*p_nearest_triangle, i_point);
+                if (loc_result == PointTriangleRelativeLocationResult::Below
+                 || loc_result == PointTriangleRelativeLocationResult::OnSamePlane)
+                    return mp_impl->m_triangles_to_mesh_map[p_nearest_triangle];
+                
+                return std::numeric_limits<size_t>::max();
+            }
         }
     }
 

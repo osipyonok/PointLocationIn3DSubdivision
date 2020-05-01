@@ -34,6 +34,20 @@ const Vector3D& Plane::GetNormal() const
 	return *mp_normal;
 }
 
+Plane::PointLocationResult Plane::LocatePoint(const Point3D& i_point) const
+{
+    Vector3D vector(i_point - *mp_origin);
+    auto dot = Dot(GetNormal(), vector);
+
+    if (std::abs(dot) < EPSILON)
+        return PointLocationResult::OnPlane;
+
+    if (dot > 0)
+        return PointLocationResult::Above;
+
+    return PointLocationResult::Below;
+}
+
 bool operator==(const Plane& i_plane1, const Plane& i_plane2)
 {
 	const auto angle = Angle(i_plane1.GetNormal(), i_plane2.GetNormal());

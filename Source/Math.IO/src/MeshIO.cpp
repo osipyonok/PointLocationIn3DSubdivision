@@ -52,19 +52,7 @@ namespace
                     const Point3D& point2 = point_normals[loaded_mesh.Indices[i + 1]].first;
                     const Point3D& point3 = point_normals[loaded_mesh.Indices[i + 2]].first;
 
-                    Point3D average_normal_pnt = (point_normals[loaded_mesh.Indices[i]].second
-                        + point_normals[loaded_mesh.Indices[i + 1]].second
-                        + point_normals[loaded_mesh.Indices[i + 2]].second) / 3;
-                    Vector3D normal = Vector3D(average_normal_pnt).Normalized();
-
-                    if (Triangle(point1, point2, point3).GetNormal() == normal)
-                    {
-                        o_mesh.AddTriangle(point1, point2, point3);
-                    }
-                    else
-                    {
-                        o_mesh.AddTriangle(point3, point2, point1);
-                    }
+                    o_mesh.AddTriangle(point1, point2, point3);
                 }
             }
 
@@ -96,17 +84,8 @@ namespace
                 auto point1 = o_mesh.AddPoint(facet.vertices[0].x, facet.vertices[0].y, facet.vertices[0].z);
                 auto point2 = o_mesh.AddPoint(facet.vertices[1].x, facet.vertices[1].y, facet.vertices[1].z);
                 auto point3 = o_mesh.AddPoint(facet.vertices[2].x, facet.vertices[2].y, facet.vertices[2].z);
-                Vector3D normal(facet.normal.x, facet.normal.y, facet.normal.z);
-                normal.Normalize();
-
-                if (Triangle(*point1, *point2, *point3).GetNormal() == normal)
-                {
-                    o_mesh.AddTriangle(*point1, *point2, *point3);
-                }
-                else
-                {
-                    o_mesh.AddTriangle(*point3, *point2, *point1);
-                }
+                
+                o_mesh.AddTriangle(*point1, *point2, *point3);
             }
 
             return true;

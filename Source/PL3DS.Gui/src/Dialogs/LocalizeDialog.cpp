@@ -5,6 +5,7 @@
 #include "PL3DS.Gui/Utilities/MeshesProxyModel.h"
 #include "PL3DS.Gui/Utilities/ProgressDialog.h"
 
+#include <Math.Core/CommonUtilities.h>
 #include <Math.Core/Mesh.h>
 #include <Math.Core/MeshTriangle.h>
 #include <Math.Core/TransformMatrix.h>
@@ -437,14 +438,14 @@ namespace UI
                 return;
             }
 
+            Point3D point(mp_impl->mp_ui->mp_spin_x->value(),
+                          mp_impl->mp_ui->mp_spin_y->value(),
+                          mp_impl->mp_ui->mp_spin_z->value());
+
             double elapsed_time_sec = 0;
             Triangle* p_triangle = nullptr;
             auto localizer = [&]
             {
-                Point3D point(mp_impl->mp_ui->mp_spin_x->value(),
-                              mp_impl->mp_ui->mp_spin_y->value(),
-                              mp_impl->mp_ui->mp_spin_z->value());
-
                 auto time_on_start = std::chrono::system_clock::now();
                 mp_impl->mp_kd_tree->Query(p_triangle, point);
                 auto time_on_finish = std::chrono::system_clock::now();
@@ -454,7 +455,15 @@ namespace UI
 
             UI::RunInThread(localizer, "Localizing point");
 
-            if (p_triangle) // check normal
+            bool located_below = false;
+            if (p_triangle)
+            {
+                auto loc_result = GetPointTriangleRelativeLocation(*p_triangle, point);
+                located_below = loc_result == PointTriangleRelativeLocationResult::Below
+                             || loc_result == PointTriangleRelativeLocationResult::OnSamePlane;
+            }
+
+            if (p_triangle && located_below)
             {
                 _LogMessage(QString("Point is located at mesh with name: %1").arg(mp_impl->m_kd_triangle_to_mesh_map[p_triangle]));
             }

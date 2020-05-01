@@ -1,6 +1,7 @@
 #include "Math.Core/CommonUtilities.h"
 
 #include "Math.Core/BoundingBox.h"
+#include "Math.Core/Plane.h"
 #include "Math.Core/Point3D.h"
 #include "Math.Core/Triangle.h"
 #include "Math.Core/Vector3D.h"
@@ -365,4 +366,25 @@ void ExtrudeInplace(BoundingBox& i_bbox, double i_offset)
     Point3D offset_point(i_offset, i_offset, i_offset);
     i_bbox.AddPoint(i_bbox.GetMin() - offset_point);
     i_bbox.AddPoint(i_bbox.GetMax() + offset_point);
+}
+
+PointTriangleRelativeLocationResult GetPointTriangleRelativeLocation(const Triangle& i_triangle, const Point3D& i_point)
+{
+    const Plane plane(i_triangle.GetPoint(0), i_triangle.GetNormal());
+    const auto location_result = plane.LocatePoint(i_point);
+
+    switch (location_result)
+    {
+    case Plane::PointLocationResult::Above:
+        return PointTriangleRelativeLocationResult::Above;
+    case Plane::PointLocationResult::Below:
+        return PointTriangleRelativeLocationResult::Below;
+    case Plane::PointLocationResult::OnPlane:
+        return PointTriangleRelativeLocationResult::OnSamePlane;
+    default:
+        assert(false);
+        break;
+    }
+    
+    return PointTriangleRelativeLocationResult::Above;
 }

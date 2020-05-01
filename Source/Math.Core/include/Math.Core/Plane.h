@@ -21,6 +21,15 @@ public:
 	const Point3D& GetOrigin() const;
 	const Vector3D& GetNormal() const;
 
+    enum class PointLocationResult
+    {
+        Above,
+        Below,
+        OnPlane,
+    };
+
+    PointLocationResult LocatePoint(const Point3D& i_point) const;
+
 	MATH_CORE_API friend bool operator==(const Plane& i_plane1, const Plane& i_plane2);
 
 private:
