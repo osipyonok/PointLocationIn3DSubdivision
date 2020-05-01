@@ -46,6 +46,9 @@ namespace Rendering
         void RenderableTransformationChanged();
         void RenderableRendererChanged();
 
+        void NestedRenderablesAboutToBeReset();
+        void NestedRenderablesReset();
+
 		void RenderableDestructed();
 
     protected:

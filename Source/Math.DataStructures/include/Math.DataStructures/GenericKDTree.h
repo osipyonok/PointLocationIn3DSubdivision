@@ -19,6 +19,7 @@ public:
     bool HasRightChild() const;
 
     Info& GetInfo();
+    const Info& GetInfo() const;
 
 
 private:
@@ -85,6 +86,12 @@ inline bool KDTreeNode<Info>::HasRightChild() const
 
 template<typename Info>
 inline Info& KDTreeNode<Info>::GetInfo()
+{
+    return *mp_info;
+}
+
+template<typename Info>
+inline const Info& KDTreeNode<Info>::GetInfo() const
 {
     return *mp_info;
 }

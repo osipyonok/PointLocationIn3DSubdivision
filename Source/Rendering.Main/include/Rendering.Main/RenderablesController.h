@@ -2,7 +2,8 @@
 
 #include <Rendering.Main/API.h>
 
-#include <QSet>
+#include <QMap>
+#include <QVector>
 #include <QObject>
 
 #include <list>
@@ -27,6 +28,9 @@ namespace Rendering
         void RenderableAdded(const Rendering::IRenderable*);
         void RenderableRemoved(const Rendering::IRenderable*);
 
+        void NestedRenderablesAboutToBeReset(const Rendering::IRenderable*);
+        void NestedRenderablesReset(const Rendering::IRenderable*);
+
         void RenderableMaterialChanged(const Rendering::IRenderable*);
         void RenderableTransformationChanged(const Rendering::IRenderable*);
         void RenderableRendererChanged(const Rendering::IRenderable*);
@@ -34,6 +38,7 @@ namespace Rendering
     private:
         RenderablesController();
 
-        QSet<IRenderable*> m_renderables;
+        QMap<IRenderable*, QVector<QMetaObject::Connection>> m_renderables;
+        //QSet<IRenderable*> m_renderables;
     };
 }

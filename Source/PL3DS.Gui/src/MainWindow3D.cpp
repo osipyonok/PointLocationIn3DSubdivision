@@ -81,6 +81,12 @@ namespace UI
         is_connected = connect(p_controller, &RenderablesController::RenderableTransformationChanged, this, &MainWindow3D::_OnRenderableTransformationChanged);
         Q_ASSERT(is_connected);
 
+        is_connected = connect(p_controller, &RenderablesController::NestedRenderablesAboutToBeReset, this, &MainWindow3D::_OnNestedRenderableAboutToBeReset);
+        Q_ASSERT(is_connected);
+
+        is_connected = connect(p_controller, &RenderablesController::NestedRenderablesReset, this, &MainWindow3D::_OnNestedRenderableReset);
+        Q_ASSERT(is_connected);
+
         Q_UNUSED(is_connected);
     }
 
@@ -319,6 +325,18 @@ namespace UI
             cached_data.mp_renderer = p_new_renderer.get();
             p_mesh->addComponent(p_new_renderer.release());
         }
+    }
+
+    void MainWindow3D::_OnNestedRenderableAboutToBeReset(const Rendering::IRenderable* ip_renderable)
+    {
+        for (auto p_old_renderable : ip_renderable->GetNestedRenderables())
+            _OnRenderableRemoved(p_old_renderable);
+    }
+
+    void MainWindow3D::_OnNestedRenderableReset(const Rendering::IRenderable* ip_renderable)
+    {
+        for (auto p_new_renderable : ip_renderable->GetNestedRenderables())
+            _OnRenderableAdded(p_new_renderable);
     }
 
     void MainWindow3D::UpdateSceneGraph()

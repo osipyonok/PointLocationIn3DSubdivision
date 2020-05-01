@@ -19,6 +19,7 @@
 #include <Rendering.Core/RenderablePoint.h>
 #include <Rendering.Core/RenderableSegment.h>
 #include <Rendering.Core/RenderableVoxelGrid.h>
+#include <Rendering.Core/RenderableTrianglesTree.h>
 
 #include <Rendering.Main/RenderablesController.h>
 
@@ -165,6 +166,7 @@ namespace UI
         std::unique_ptr<TrianglesTree> mp_kd_tree;
         std::list<Triangle> m_kd_transformed_triangles;
         std::unordered_map<Triangle*, QStringView> m_kd_triangle_to_mesh_map;
+        std::unique_ptr<Rendering::RenderableTrianglesTree> mp_renderable_kd_tree;
     };
 
     LocalizeDialog::LocalizeDialog(QDialog* ip_parent)
@@ -198,12 +200,15 @@ namespace UI
 
         auto invalidate = [this]
         {
+            _UpdateSliders();
+
             mp_impl->mp_localizer_voxelized.reset();
             mp_impl->mp_renderable_voxel_grid.reset();
 
             mp_impl->mp_kd_tree.reset();
             mp_impl->m_kd_triangle_to_mesh_map.clear();
             mp_impl->m_kd_transformed_triangles.clear();
+            mp_impl->mp_renderable_kd_tree.reset();
         };
 
         is_connected = connect(p_meshes_model, &QAbstractItemModel::rowsAboutToBeRemoved, this, [=](const QModelIndex&, int i_first, int i_last)
@@ -233,6 +238,7 @@ namespace UI
         _InitVoxelBased();
         _InitKDTreeBased();
 
+        _UpdateSliders();
 
         Rendering::RenderablesController::GetInstance().AddRenderable(*mp_impl->mp_preview);
 
@@ -378,6 +384,7 @@ namespace UI
 
         is_connected = connect(mp_impl->mp_ui->mp_btn_kd_build, &QAbstractButton::clicked, this, [=]
         {
+            mp_impl->mp_renderable_kd_tree.reset();
             mp_impl->mp_kd_tree = std::make_unique<TrianglesTree>();
             mp_impl->m_kd_triangle_to_mesh_map.clear();
             mp_impl->m_kd_transformed_triangles.clear();
@@ -426,7 +433,10 @@ namespace UI
 
             _LogMessage(QString("Build of k-d tree finished, elapsed time: %1 sec.").arg(QString::number(elapsed_time_sec, 'f')));
 
-            // todo renderable
+            mp_impl->mp_renderable_kd_tree = std::make_unique<Rendering::RenderableTrianglesTree>(*mp_impl->mp_kd_tree);
+            RenderablesModel::GetInstance().AddRenderable(mp_impl->mp_renderable_kd_tree.get(), "K-d tree");
+            
+            _UpdateSliders();
         });
         Q_ASSERT(is_connected);
 
@@ -475,7 +485,65 @@ namespace UI
         });
         Q_ASSERT(is_connected);
 
+        is_connected = connect(mp_impl->mp_ui->mp_slider_kd_layer, &QSlider::valueChanged, this, [this](int i_value)
+        {
+            if (mp_impl->mp_renderable_kd_tree)
+                mp_impl->mp_renderable_kd_tree->SetCurrentLayer(i_value);
+        });
+        Q_ASSERT(is_connected);
+
+        is_connected = connect(mp_impl->mp_ui->mp_btn_kd_toggle, &QAbstractButton::clicked, this, [this]
+        {
+            if (!mp_impl->mp_renderable_kd_tree)
+                return;
+
+            auto current = mp_impl->mp_renderable_kd_tree->GetRenderingStyle();
+            if (current == Rendering::RenderableTrianglesTree::RenderingStyle::Opaque)
+                mp_impl->mp_renderable_kd_tree->SetRenderingStyle(Rendering::RenderableTrianglesTree::RenderingStyle::Transparent);
+            else
+                mp_impl->mp_renderable_kd_tree->SetRenderingStyle(Rendering::RenderableTrianglesTree::RenderingStyle::Opaque);
+        });
+        Q_ASSERT(is_connected);
+
+        is_connected = connect(mp_impl->mp_ui->mp_btn_kd_show_hide, &QAbstractButton::clicked, this, [this]
+        {
+            if (!mp_impl->mp_renderable_kd_tree)
+                return;
+
+            auto& model = RenderablesModel::GetInstance();
+            auto indexes = model.match(model.index(0, 0), RenderablesModel::RawRenderablePtr, QVariant::fromValue<Rendering::IRenderable*>(mp_impl->mp_renderable_kd_tree.get()), 1, Qt::MatchExactly);
+            if (indexes.empty())
+                return;
+
+            Q_ASSERT(indexes.size() == 1);
+            auto index = indexes.at(0);
+            bool is_visible = index.data(RenderablesModel::Visibility).toBool();
+            model.SetRenderableVisible(mp_impl->mp_renderable_kd_tree.get(), !is_visible);
+        });
+        Q_ASSERT(is_connected);
+
         Q_UNUSED(is_connected);
+    }
+
+    void LocalizeDialog::_UpdateSliders()
+    {
+        // kd tree
+        if (auto p_renderable_kd_tree = mp_impl->mp_renderable_kd_tree.get())
+        {
+            auto max = p_renderable_kd_tree->GetLayersCount();
+            auto current = p_renderable_kd_tree->GetCurrentLayer();
+
+            mp_impl->mp_ui->mp_slider_kd_layer->setEnabled(true);
+            mp_impl->mp_ui->mp_slider_kd_layer->setMinimum(0);
+            mp_impl->mp_ui->mp_slider_kd_layer->setMaximum(static_cast<int>(max));
+            mp_impl->mp_ui->mp_slider_kd_layer->setValue(static_cast<int>(current));
+        }
+        else
+        {
+            mp_impl->mp_ui->mp_slider_kd_layer->setEnabled(false);
+            mp_impl->mp_ui->mp_slider_kd_layer->setMinimum(0);
+            mp_impl->mp_ui->mp_slider_kd_layer->setMaximum(0);
+        }
     }
 
     void LocalizeDialog::_LogMessage(const QString& i_str) const

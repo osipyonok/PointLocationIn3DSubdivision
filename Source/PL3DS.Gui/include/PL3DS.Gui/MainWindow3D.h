@@ -42,6 +42,9 @@ namespace UI
         void _OnRenderableTransformationChanged(const Rendering::IRenderable* ip_renderable);
         void _OnRenderableRendererChanged(const Rendering::IRenderable* ip_renderable);
 
+        void _OnNestedRenderableAboutToBeReset(const Rendering::IRenderable* ip_renderable);
+        void _OnNestedRenderableReset(const Rendering::IRenderable* ip_renderable);
+
 	private:
 		struct Impl;
 		std::unique_ptr<Impl> mp_impl;

@@ -286,7 +286,6 @@ namespace
     {
         auto p_dialog = std::make_unique<UI::LocalizeDialog>();
         p_dialog->setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
-        p_dialog->setWindowFlag(Qt::WindowType::WindowCloseButtonHint, false);
         p_dialog->setWindowFlag(Qt::WindowType::WindowMinimizeButtonHint, false);
         p_dialog->setWindowFlag(Qt::WindowType::WindowContextHelpButtonHint, false);
         p_dialog.release()->show();

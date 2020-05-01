@@ -54,6 +54,8 @@ namespace UI
         void _InitVoxelBased();
         void _InitKDTreeBased();
 
+        void _UpdateSliders();
+
         void _LogMessage(const QString& i_str) const;
 
         struct Impl;
