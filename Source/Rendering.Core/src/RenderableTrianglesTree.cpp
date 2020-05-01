@@ -20,65 +20,6 @@
 
 namespace
 {
-    size_t _GetMaxLayersCount(const TrianglesTree& i_tree)
-    {
-        if (!i_tree.WasBuild())
-            return 0;
-
-        std::function<size_t(const TrianglesTree::NodeType&)> depth_counter = [&](const TrianglesTree::NodeType& i_node)
-        {
-            size_t left_count = 0;
-            size_t right_count = 0;
-
-            if (i_node.HasLeftChild())
-            {
-                left_count = depth_counter(const_cast<TrianglesTree::NodeType&>(i_node).GetLeftChild());
-            }
-
-            if (i_node.HasRightChild())
-            {
-                right_count = depth_counter(const_cast<TrianglesTree::NodeType&>(i_node).GetRightChild());
-            }
-
-            return std::max(left_count, right_count) + 1;
-        };
-
-        return depth_counter(const_cast<TrianglesTree&>(i_tree).GetRoot());
-    }
-
-    std::vector<BoundingBox> _GetBBoxes(const TrianglesTree& i_tree, size_t i_depth_limit)
-    {
-        std::vector<BoundingBox> boxes;
-
-        std::function<void(const TrianglesTree::NodeType&, size_t)> bbox_collector = [&](const TrianglesTree::NodeType& i_node, size_t i_depth)
-        {
-            if (i_depth == i_depth_limit || (!i_node.HasLeftChild() && !i_node.HasRightChild()))
-            {
-                boxes.emplace_back(i_node.GetInfo().m_bbox);
-                return;
-            }
-
-            if (i_depth > i_depth_limit)
-            {
-                Q_ASSERT(false);
-                return;
-            }
-
-            if (i_node.HasLeftChild())
-            {
-                bbox_collector(const_cast<TrianglesTree::NodeType&>(i_node).GetLeftChild(), i_depth + 1);
-            }
-
-            if (i_node.HasRightChild())
-            {
-                bbox_collector(const_cast<TrianglesTree::NodeType&>(i_node).GetRightChild(), i_depth + 1);
-            }
-        };
-
-        bbox_collector(const_cast<TrianglesTree&>(i_tree).GetRoot(), 0);
-        return std::move(boxes);
-    }
-
     std::vector<QColor> _GenerateNColor(size_t i_n)
     {
         static constexpr int seed = 555;
@@ -97,9 +38,11 @@ namespace
 namespace Rendering
 {
 
+
+
     struct RenderableTrianglesTree::Impl 
     {
-        const TrianglesTree* mp_tree = nullptr;
+        std::unique_ptr<ITreeDataSource> mp_data_source;
         size_t m_layers_count = 0;
         size_t m_current_layer = 0;
         RenderingStyle m_style = RenderingStyle::Transparent;
@@ -107,12 +50,11 @@ namespace Rendering
         TransformMatrix m_transform;
     };
 
-    RenderableTrianglesTree::RenderableTrianglesTree(const TrianglesTree& i_tree)
+    RenderableTrianglesTree::RenderableTrianglesTree(std::unique_ptr<ITreeDataSource>&& ip_data_source)
         : mp_impl(std::make_unique<Impl>())
     {
-        Q_ASSERT(i_tree.WasBuild());
-        mp_impl->mp_tree = &i_tree;
-        mp_impl->m_layers_count = _GetMaxLayersCount(i_tree);
+        mp_impl->mp_data_source = std::move(ip_data_source);
+        mp_impl->m_layers_count = mp_impl->mp_data_source->GetMaxDepth();
         _UpdateNestedRenderables();
     }
 
@@ -217,7 +159,7 @@ namespace Rendering
         emit NestedRenderablesAboutToBeReset();
         mp_impl->m_renderables.clear();
 
-        std::vector<BoundingBox> boxes = _GetBBoxes(*mp_impl->mp_tree, mp_impl->m_current_layer);
+        std::vector<BoundingBox> boxes = mp_impl->mp_data_source->GetNodesBoxes(mp_impl->m_current_layer);  //_GetBBoxes(*mp_impl->mp_tree, mp_impl->m_current_layer);
         auto colors = _GenerateNColor(boxes.size());
 
         for (const auto& bbox : boxes)
@@ -237,6 +179,126 @@ namespace Rendering
         }
 
         emit NestedRenderablesReset();
+    }
+
+    TrianglesTreeDataSource::TrianglesTreeDataSource(const TrianglesTree& i_tree)
+        : mp_tree(&i_tree)
+    {
+    }
+
+    size_t TrianglesTreeDataSource::GetMaxDepth() const
+    {
+        if (!mp_tree->WasBuild())
+            return 0;
+
+        std::function<size_t(const TrianglesTree::NodeType&)> depth_counter = [&](const TrianglesTree::NodeType& i_node)
+        {
+            size_t left_count = 0;
+            size_t right_count = 0;
+
+            if (i_node.HasLeftChild())
+            {
+                left_count = depth_counter(const_cast<TrianglesTree::NodeType&>(i_node).GetLeftChild());
+            }
+
+            if (i_node.HasRightChild())
+            {
+                right_count = depth_counter(const_cast<TrianglesTree::NodeType&>(i_node).GetRightChild());
+            }
+
+            return std::max(left_count, right_count) + 1;
+        };
+
+        return depth_counter(const_cast<TrianglesTree&>(*mp_tree).GetRoot());
+    }
+
+    std::vector<BoundingBox> TrianglesTreeDataSource::GetNodesBoxes(size_t i_layer) const
+    {
+        std::vector<BoundingBox> boxes;
+
+        std::function<void(const TrianglesTree::NodeType&, size_t)> bbox_collector = [&](const TrianglesTree::NodeType& i_node, size_t i_depth)
+        {
+            if (i_depth == i_layer || (!i_node.HasLeftChild() && !i_node.HasRightChild()))
+            {
+                boxes.emplace_back(i_node.GetInfo().m_bbox);
+                return;
+            }
+
+            if (i_depth > i_layer)
+            {
+                Q_ASSERT(false);
+                return;
+            }
+
+            if (i_node.HasLeftChild())
+            {
+                bbox_collector(const_cast<TrianglesTree::NodeType&>(i_node).GetLeftChild(), i_depth + 1);
+            }
+
+            if (i_node.HasRightChild())
+            {
+                bbox_collector(const_cast<TrianglesTree::NodeType&>(i_node).GetRightChild(), i_depth + 1);
+            }
+        };
+
+        bbox_collector(const_cast<TrianglesTree&>(*mp_tree).GetRoot(), 0);
+        return std::move(boxes);
+    }
+
+    TriangleOcTreeDataSource::TriangleOcTreeDataSource(const TrianglesOcTree& i_tree)
+        : mp_tree(&i_tree)
+    {
+    }
+
+    size_t TriangleOcTreeDataSource::GetMaxDepth() const
+    {
+        if (!mp_tree->WasBuild())
+            return 0;
+
+        std::function<size_t(const TrianglesOcTree::NodeType&)> depth_counter = [&](const TrianglesOcTree::NodeType& i_node)
+        {
+            size_t max = 0;
+            for (size_t i = 0; i < 8; ++i)
+            {
+                if (auto p_child = i_node.GetChild(i))
+                {
+                    max = std::max(max, depth_counter(*p_child));
+                }
+            }
+
+            return max + 1;
+        };
+        
+        return depth_counter(const_cast<TrianglesOcTree&>(*mp_tree).GetRoot());
+    }
+
+    std::vector<BoundingBox> TriangleOcTreeDataSource::GetNodesBoxes(size_t i_layer) const
+    {
+        std::vector<BoundingBox> boxes;
+
+        std::function<void(const TrianglesOcTree::NodeType&, size_t)> bbox_collector = [&](const TrianglesOcTree::NodeType& i_node, size_t i_depth)
+        {
+            bool is_leaf = !i_node.GetChild(0);
+            if (i_depth == i_layer || is_leaf)
+            {
+                boxes.emplace_back(i_node.GetBoundingBox());
+                return;
+            }
+
+            if (i_depth > i_layer)
+            {
+                Q_ASSERT(false);
+                return;
+            }
+
+            for (size_t i = 0; i < 8; ++i)
+            {
+                bbox_collector(*i_node.GetChild(i), i_depth + 1);
+            }
+        };
+
+        bbox_collector(const_cast<TrianglesOcTree&>(*mp_tree).GetRoot(), 0);
+        return std::move(boxes);
     }
 
 }

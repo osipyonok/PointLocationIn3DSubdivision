@@ -53,6 +53,7 @@ namespace UI
     private:
         void _InitVoxelBased();
         void _InitKDTreeBased();
+        void _InitOcTreeBased();
 
         void _UpdateSliders();
 

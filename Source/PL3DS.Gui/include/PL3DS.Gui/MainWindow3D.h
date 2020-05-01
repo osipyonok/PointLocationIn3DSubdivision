@@ -18,6 +18,9 @@ namespace UI
 		MainWindow3D(QWindow* ip_parent = nullptr);
 		~MainWindow3D() override;
 
+        void ViewAll();
+        void ViewRenderable(const Rendering::IRenderable* ip_renderable);
+
 	protected:
 		void resizeEvent(QResizeEvent*) override;
 

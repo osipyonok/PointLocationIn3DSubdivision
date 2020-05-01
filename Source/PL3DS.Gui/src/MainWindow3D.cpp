@@ -92,6 +92,25 @@ namespace UI
 
     MainWindow3D::~MainWindow3D() = default;
 
+    void MainWindow3D::ViewAll()
+    {
+        if (mp_impl->mp_camera)
+            mp_impl->mp_camera->viewAll();
+    }
+
+    void MainWindow3D::ViewRenderable(const Rendering::IRenderable* ip_renderable)
+    {
+        if (!ip_renderable)
+            return;
+
+        auto it = mp_impl->m_renderables_cache.find(ip_renderable);
+        if (it == mp_impl->m_renderables_cache.end())
+            return;
+
+        if (mp_impl->mp_camera)
+            mp_impl->mp_camera->viewEntity(it->second.mp_mesh.data());
+    }
+
     void MainWindow3D::resizeEvent(QResizeEvent*)
     {
         if (mp_impl->mp_camera)
@@ -123,9 +142,7 @@ namespace UI
         mp_impl->mp_camera_controller = new Klein::TrackballCameraController(rootEntity);
         mp_impl->mp_camera_controller->setCamera(mp_impl->mp_camera);
         mp_impl->mp_camera_controller->setWindowSize(size());
-
-        //mp_impl->mp_scene = rootEntity;
-
+        
         return rootEntity;
     }
 

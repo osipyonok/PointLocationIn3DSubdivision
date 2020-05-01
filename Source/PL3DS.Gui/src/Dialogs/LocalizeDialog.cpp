@@ -12,6 +12,7 @@
 
 #include <Math.Algos/PointLocalizerVoxelized.h>
 
+#include <Math.DataStructures/TrianglesOctree.h>
 #include <Math.DataStructures/TrianglesTree.h>
 #include <Math.DataStructures/VoxelGrid.h>
 
@@ -167,6 +168,12 @@ namespace UI
         std::list<Triangle> m_kd_transformed_triangles;
         std::unordered_map<Triangle*, QStringView> m_kd_triangle_to_mesh_map;
         std::unique_ptr<Rendering::RenderableTrianglesTree> mp_renderable_kd_tree;
+
+        // octree based stuff
+        std::unique_ptr<TrianglesOcTree> mp_octree;
+        std::list<Triangle> m_oct_transformed_triangles;
+        std::unordered_map<Triangle*, QStringView> m_oct_triangle_to_mesh_map;
+        std::unique_ptr<Rendering::RenderableTrianglesTree> mp_renderable_octree;
     };
 
     LocalizeDialog::LocalizeDialog(QDialog* ip_parent)
@@ -209,6 +216,11 @@ namespace UI
             mp_impl->m_kd_triangle_to_mesh_map.clear();
             mp_impl->m_kd_transformed_triangles.clear();
             mp_impl->mp_renderable_kd_tree.reset();
+
+            mp_impl->mp_octree.reset();
+            mp_impl->m_oct_triangle_to_mesh_map.clear();
+            mp_impl->m_oct_transformed_triangles.clear();
+            mp_impl->mp_renderable_octree.reset();
         };
 
         is_connected = connect(p_meshes_model, &QAbstractItemModel::rowsAboutToBeRemoved, this, [=](const QModelIndex&, int i_first, int i_last)
@@ -237,6 +249,7 @@ namespace UI
 
         _InitVoxelBased();
         _InitKDTreeBased();
+        _InitOcTreeBased();
 
         _UpdateSliders();
 
@@ -433,7 +446,8 @@ namespace UI
 
             _LogMessage(QString("Build of k-d tree finished, elapsed time: %1 sec.").arg(QString::number(elapsed_time_sec, 'f')));
 
-            mp_impl->mp_renderable_kd_tree = std::make_unique<Rendering::RenderableTrianglesTree>(*mp_impl->mp_kd_tree);
+            auto p_tree_source = std::make_unique<Rendering::TrianglesTreeDataSource>(*mp_impl->mp_kd_tree);
+            mp_impl->mp_renderable_kd_tree = std::make_unique<Rendering::RenderableTrianglesTree>(std::move(p_tree_source));
             RenderablesModel::GetInstance().AddRenderable(mp_impl->mp_renderable_kd_tree.get(), "K-d tree");
             
             _UpdateSliders();
@@ -525,6 +539,151 @@ namespace UI
         Q_UNUSED(is_connected);
     }
 
+    void LocalizeDialog::_InitOcTreeBased()
+    {
+        bool is_connected = false;
+
+        is_connected = connect(mp_impl->mp_ui->mp_btn_octree_build, &QAbstractButton::clicked, this, [=]
+        {
+            mp_impl->mp_octree = std::make_unique<TrianglesOcTree>();
+
+            double elapsed_time_sec = 0;
+            auto builder = [&]
+            {
+                auto meshes = _GetMeshesWithTransformation(mp_impl->mp_ui->mp_list_meshes->model());
+
+                std::vector<Triangle*> triangles;
+                for (const auto& mesh_transform : meshes)
+                {
+                    const auto p_mesh = mesh_transform.first;
+                    const auto& transform = mesh_transform.second;
+
+                    for (size_t i = 0; i < p_mesh->GetTrianglesCount(); ++i)
+                    {
+                        if (auto p_triangle = p_mesh->GetTriangle(i).lock())
+                        {
+                            auto point1 = p_triangle->GetPoint(0);
+                            auto point2 = p_triangle->GetPoint(1);
+                            auto point3 = p_triangle->GetPoint(2);
+                            transform.ApplyTransformation(point1);
+                            transform.ApplyTransformation(point2);
+                            transform.ApplyTransformation(point3);
+
+                            mp_impl->m_oct_transformed_triangles.emplace_back(point1, point2, point3);
+                            mp_impl->m_oct_triangle_to_mesh_map[&mp_impl->m_oct_transformed_triangles.back()] = QStringView(p_mesh->GetName());
+                            triangles.emplace_back(&mp_impl->m_oct_transformed_triangles.back());
+                        }
+                        else
+                        {
+                            assert(false);
+                        }
+                    }
+                }
+
+                auto time_on_start = std::chrono::system_clock::now();
+                mp_impl->mp_octree->Build(triangles);
+                auto time_on_finish = std::chrono::system_clock::now();
+                std::chrono::duration<double> diff = time_on_finish - time_on_start;
+                elapsed_time_sec = diff.count();
+            };
+
+            UI::RunInThread(builder, "Build OcTree");
+
+            _LogMessage(QString("Build of OcTree finished, elapsed time: %1 sec.").arg(QString::number(elapsed_time_sec, 'f')));
+
+            auto p_tree_source = std::make_unique<Rendering::TriangleOcTreeDataSource>(*mp_impl->mp_octree);
+            mp_impl->mp_renderable_octree = std::make_unique<Rendering::RenderableTrianglesTree>(std::move(p_tree_source));
+            RenderablesModel::GetInstance().AddRenderable(mp_impl->mp_renderable_octree.get(), "OcTree");
+
+            _UpdateSliders();
+        });
+        Q_ASSERT(is_connected);
+
+        is_connected = connect(mp_impl->mp_ui->mp_slider_octree_layer, &QSlider::valueChanged, this, [this](int i_value)
+        {
+            if (mp_impl->mp_renderable_octree)
+                mp_impl->mp_renderable_octree->SetCurrentLayer(i_value);
+        });
+        Q_ASSERT(is_connected);
+
+        is_connected = connect(mp_impl->mp_ui->mp_btn_octree_toggle, &QAbstractButton::clicked, this, [this]
+        {
+            if (!mp_impl->mp_renderable_octree)
+                return;
+
+            auto current = mp_impl->mp_renderable_octree->GetRenderingStyle();
+            if (current == Rendering::RenderableTrianglesTree::RenderingStyle::Opaque)
+                mp_impl->mp_renderable_octree->SetRenderingStyle(Rendering::RenderableTrianglesTree::RenderingStyle::Transparent);
+            else
+                mp_impl->mp_renderable_octree->SetRenderingStyle(Rendering::RenderableTrianglesTree::RenderingStyle::Opaque);
+        });
+        Q_ASSERT(is_connected);
+
+        is_connected = connect(mp_impl->mp_ui->mp_btn_octree_show_hide, &QAbstractButton::clicked, this, [this]
+        {
+            if (!mp_impl->mp_renderable_octree)
+                return;
+
+            auto& model = RenderablesModel::GetInstance();
+            auto indexes = model.match(model.index(0, 0), RenderablesModel::RawRenderablePtr, QVariant::fromValue<Rendering::IRenderable*>(mp_impl->mp_renderable_octree.get()), 1, Qt::MatchExactly);
+            if (indexes.empty())
+                return;
+
+            Q_ASSERT(indexes.size() == 1);
+            auto index = indexes.at(0);
+            bool is_visible = index.data(RenderablesModel::Visibility).toBool();
+            model.SetRenderableVisible(mp_impl->mp_renderable_octree.get(), !is_visible);
+        });
+        Q_ASSERT(is_connected);
+
+        is_connected = connect(mp_impl->mp_ui->mp_btn_octree_localize, &QAbstractButton::clicked, this, [this]
+        {
+            if (!mp_impl->mp_octree || !mp_impl->mp_octree->WasBuild())
+            {
+                _LogMessage("Error, OcTree was not built");
+                return;
+            }
+
+            Point3D point(mp_impl->mp_ui->mp_spin_x->value(),
+                          mp_impl->mp_ui->mp_spin_y->value(),
+                          mp_impl->mp_ui->mp_spin_z->value());
+
+            double elapsed_time_sec = 0;
+            Triangle* p_triangle = nullptr;
+            auto localizer = [&]
+            {
+                auto time_on_start = std::chrono::system_clock::now();
+                mp_impl->mp_octree->Query(p_triangle, point);
+                auto time_on_finish = std::chrono::system_clock::now();
+                std::chrono::duration<double> diff = time_on_finish - time_on_start;
+                elapsed_time_sec = diff.count();
+            };
+
+            UI::RunInThread(localizer, "Localizing point");
+
+            bool located_below = false;
+            if (p_triangle)
+            {
+                auto loc_result = GetPointTriangleRelativeLocation(*p_triangle, point);
+                located_below = loc_result == PointTriangleRelativeLocationResult::Below
+                             || loc_result == PointTriangleRelativeLocationResult::OnSamePlane;
+            }
+
+            if (p_triangle && located_below)
+            {
+                _LogMessage(QString("Point is located at mesh with name: %1").arg(mp_impl->m_oct_triangle_to_mesh_map[p_triangle]));
+            }
+            else
+            {
+                _LogMessage("Point is located outside of all meshes");
+            }
+            _LogMessage(QString("Elapsed time: %1 sec.").arg(QString::number(elapsed_time_sec, 'f')));
+        });
+        Q_ASSERT(is_connected);
+
+        Q_UNUSED(is_connected);
+    }
+
     void LocalizeDialog::_UpdateSliders()
     {
         // kd tree
@@ -543,6 +702,24 @@ namespace UI
             mp_impl->mp_ui->mp_slider_kd_layer->setEnabled(false);
             mp_impl->mp_ui->mp_slider_kd_layer->setMinimum(0);
             mp_impl->mp_ui->mp_slider_kd_layer->setMaximum(0);
+        }
+
+        // octree
+        if (auto p_renderable_octree = mp_impl->mp_renderable_octree.get())
+        {
+            auto max = p_renderable_octree->GetLayersCount();
+            auto current = p_renderable_octree->GetCurrentLayer();
+
+            mp_impl->mp_ui->mp_slider_octree_layer->setEnabled(true);
+            mp_impl->mp_ui->mp_slider_octree_layer->setMinimum(0);
+            mp_impl->mp_ui->mp_slider_octree_layer->setMaximum(static_cast<int>(max));
+            mp_impl->mp_ui->mp_slider_octree_layer->setValue(static_cast<int>(current));
+        }
+        else
+        {
+            mp_impl->mp_ui->mp_slider_octree_layer->setEnabled(false);
+            mp_impl->mp_ui->mp_slider_octree_layer->setMinimum(0);
+            mp_impl->mp_ui->mp_slider_octree_layer->setMaximum(0);
         }
     }
 

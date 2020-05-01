@@ -17,7 +17,7 @@
 
 namespace
 {
-    void _InitConnections(const UI::MainWidget::Params& i_params, const Ui::MainWidget& i_ui)
+    void _InitConnections(const UI::MainWidget::Params& i_params, const Ui::MainWidget& i_ui, UI::MainWindow3D* ip_window_3d)
     {
         auto update_buttons_to_current_state = [=]
         {
@@ -25,6 +25,7 @@ namespace
             {
                 i_ui.mp_btn_remove_selected->setEnabled(true);
                 i_ui.mp_btn_toggle_visibility->setEnabled(true);
+                i_ui.mp_btn_view_selected->setEnabled(true);
 
                 auto p_model = i_ui.mp_list_renderables->model();
                 auto indexes = p_model->match(p_model->index(0, 0), RenderablesModel::RawRenderablePtr, QVariant::fromValue(p_current_renderable), 1, Qt::MatchExactly);
@@ -37,8 +38,6 @@ namespace
                 const bool is_grid = qobject_cast<Rendering::RenderableVoxelGrid*>(p_renderable);
                 i_ui.mp_btn_transform->setEnabled(is_mesh);
                 i_ui.mp_btn_subdivide->setEnabled(is_mesh);
-                i_ui.mp_btn_voxelize->setEnabled(is_mesh);
-                i_ui.mp_btn_build_kd_tree->setEnabled(is_mesh);
                 i_ui.mp_btn_toggle_view_mode->setEnabled(is_mesh || is_bbox || is_grid);
             }
             else
@@ -47,8 +46,7 @@ namespace
                 i_ui.mp_btn_toggle_visibility->setEnabled(false);
                 i_ui.mp_btn_transform->setEnabled(false);
                 i_ui.mp_btn_subdivide->setEnabled(false);
-                i_ui.mp_btn_voxelize->setEnabled(false);
-                i_ui.mp_btn_build_kd_tree->setEnabled(false);
+                i_ui.mp_btn_view_selected->setEnabled(false);
                 i_ui.mp_btn_toggle_view_mode->setEnabled(false);
             }
         };
@@ -61,9 +59,6 @@ namespace
         Q_ASSERT(is_connected);
 
         is_connected = QObject::connect(i_ui.mp_btn_remove_selected, &QAbstractButton::clicked, i_params.mp_remove_selected_action, &QAction::trigger);
-        Q_ASSERT(is_connected);
-
-        is_connected = QObject::connect(i_ui.mp_btn_voxelize, &QAbstractButton::clicked, i_params.mp_voxelize_action, &QAction::trigger);
         Q_ASSERT(is_connected);
 
         is_connected = QObject::connect(i_ui.mp_btn_toggle_view_mode, &QAbstractButton::clicked, i_params.mp_toggle_view_mode_adction, &QAction::trigger);
@@ -96,6 +91,18 @@ namespace
         });
         Q_ASSERT(is_connected);
 
+        is_connected = QObject::connect(i_ui.mp_btn_view_all, &QAbstractButton::clicked, ip_window_3d, [=]
+        {
+            ip_window_3d->ViewAll();
+        });
+        Q_ASSERT(is_connected);
+
+        is_connected = QObject::connect(i_ui.mp_btn_view_selected, &QAbstractButton::clicked, ip_window_3d, [=]
+        {
+            ip_window_3d->ViewRenderable(i_params.m_selected_renderable_getter());
+        });
+        Q_ASSERT(is_connected);
+
         update_buttons_to_current_state();
 
         Q_UNUSED(is_connected);
@@ -111,12 +118,14 @@ namespace UI
         Ui::MainWidget ui;
         ui.setupUi(this);
 
-        std::unique_ptr<QWidget> p_widget(QWidget::createWindowContainer(new UI::MainWindow3D));
+        auto p_window_3d = new UI::MainWindow3D;
+        std::unique_ptr<QWidget> p_widget(QWidget::createWindowContainer(p_window_3d));
+
         ui.mp_main_widget->layout()->addWidget(p_widget.release());
 
         ui.mp_list_renderables->setModel(i_params.mp_renderables_model);
 
-        _InitConnections(i_params, ui);
+        _InitConnections(i_params, ui, p_window_3d);
     }
 
 

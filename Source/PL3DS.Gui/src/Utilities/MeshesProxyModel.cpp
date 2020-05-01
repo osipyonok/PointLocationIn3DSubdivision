@@ -64,7 +64,7 @@ QVariant MeshesProxyModel::data(const QModelIndex& i_index, int i_role) const
     auto it = m_checked_states.find(row);
     if (m_checked_states.find(row) == m_checked_states.end())
     {
-        return Qt::Unchecked;
+        return Qt::Checked;
     }
 
     return it->second;

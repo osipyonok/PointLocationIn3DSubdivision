@@ -4,6 +4,7 @@
 
 #include <Rendering.Core/IRenderable.h>
 
+#include <Math.DataStructures/TrianglesOctree.h>
 #include <Math.DataStructures/TrianglesTree.h>
 
 #include <memory>
@@ -14,6 +15,36 @@ class TransformMatrix;
 
 namespace Rendering
 {
+    struct RENDERING_CORE_API ITreeDataSource
+    {
+        virtual ~ITreeDataSource() = default;
+
+        virtual size_t GetMaxDepth() const = 0;
+        virtual std::vector<BoundingBox> GetNodesBoxes(size_t i_layer) const = 0;
+    };
+
+    struct RENDERING_CORE_API TrianglesTreeDataSource : public ITreeDataSource
+    {
+        TrianglesTreeDataSource(const TrianglesTree& i_tree);
+
+        size_t GetMaxDepth() const override;
+        std::vector<BoundingBox> GetNodesBoxes(size_t i_layer) const override;
+
+    private:
+        const TrianglesTree* mp_tree = nullptr;
+    };
+
+    struct RENDERING_CORE_API TriangleOcTreeDataSource : public ITreeDataSource
+    {
+        TriangleOcTreeDataSource(const TrianglesOcTree& i_tree);
+
+        size_t GetMaxDepth() const override;
+        std::vector<BoundingBox> GetNodesBoxes(size_t i_layer) const override;
+
+    private:
+        const TrianglesOcTree* mp_tree = nullptr;
+    };
+
     class RENDERING_CORE_API RenderableTrianglesTree : public IRenderable
     {
         Q_OBJECT
@@ -25,7 +56,7 @@ namespace Rendering
             Transparent,
         };
 
-        RenderableTrianglesTree(const TrianglesTree& i_tree);
+        RenderableTrianglesTree(std::unique_ptr<ITreeDataSource>&& ip_data_source);
         ~RenderableTrianglesTree() override;
 
         std::unique_ptr<Qt3DCore::QComponent> GetMaterial() const override;

@@ -159,7 +159,7 @@ double Distance(const Point3D& i_point, const BoundingBox& i_bbox)
     for (auto indexes : triangles)
     {
         Triangle triangle(nodes[std::get<0>(indexes)], nodes[std::get<1>(indexes)], nodes[std::get<2>(indexes)]);
-        distance = std::max(distance, Distance(i_point, triangle));
+        distance = std::min(distance, Distance(i_point, triangle));
     }
 
     return distance;
