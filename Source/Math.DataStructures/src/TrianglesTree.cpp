@@ -5,8 +5,7 @@ void NearestTriangleApproximationFunctor::operator()(TrianglesTreeNode& i_root, 
     if (!i_root.GetInfo().m_bbox.ContainsPoint(i_point))
         return;
 
-    const bool is_leaf = (!i_root.HasLeftChild() || (i_root.HasLeftChild() && i_root.GetLeftChild().GetInfo().m_triangles.empty()))
-        && (!i_root.HasRightChild() || (i_root.HasRightChild() && i_root.GetRightChild().GetInfo().m_triangles.empty()));
+    const bool is_leaf = !i_root.HasLeftChild() && !i_root.HasRightChild();
     if (!is_leaf)
     {
         Q_ASSERT(i_root.HasLeftChild());

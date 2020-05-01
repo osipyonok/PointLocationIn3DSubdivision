@@ -44,8 +44,11 @@ public:
 
     NodeType& GetRoot() { return m_root; }
 
+    bool WasBuild() const { return m_was_build; }
+
 private:
     NodeType m_root;
+    bool m_was_build = false;
 };
 
 
@@ -91,6 +94,7 @@ template<typename... Args>
 inline void GenericKDTree<Info, BuildFunctor, QueryFunctor>::Build(Args&&... i_args)
 {
     std::invoke(BuildFunctor{}, m_root, std::forward<Args>(i_args)...);
+    m_was_build = true;
 }
 
 template<typename Info, typename BuildFunctor, typename QueryFunctor>

@@ -6,10 +6,12 @@
 #include "PL3DS.Gui/Utilities/ProgressDialog.h"
 
 #include <Math.Core/Mesh.h>
+#include <Math.Core/MeshTriangle.h>
 #include <Math.Core/TransformMatrix.h>
 
 #include <Math.Algos/PointLocalizerVoxelized.h>
 
+#include <Math.DataStructures/TrianglesTree.h>
 #include <Math.DataStructures/VoxelGrid.h>
 
 #include <Rendering.Core/RenderableMesh.h>
@@ -22,6 +24,7 @@
 #include <Qt3DCore/QTransform>
 
 #include <QString>
+#include <QStringView>
 
 #include <chrono>
 #include <map>
@@ -29,6 +32,30 @@
 namespace
 {
     constexpr auto WINDOWS_ENDL = "\r\n";
+
+    auto _GetMeshesWithTransformation(QAbstractItemModel* ip_model)
+    {
+        std::vector<std::pair<Mesh*, TransformMatrix>> meshes;
+        for (int i = 0; i < ip_model->rowCount(); ++i)
+        {
+            auto index = ip_model->index(i, 0);
+
+            if (index.data(Qt::CheckStateRole).value<Qt::CheckState>() != Qt::Checked)
+                continue;
+
+            auto renderable = index.data(RenderablesModel::RawRenderablePtr);
+            if (!renderable.isValid())
+                continue;
+
+            auto p_renderable = qobject_cast<Rendering::RenderableMesh*>(renderable.value<Rendering::IRenderable*>());
+            if (!p_renderable)
+                continue;
+
+            meshes.emplace_back(p_renderable->GetMesh(), p_renderable->GetTransform());
+        }
+
+        return std::move(meshes);
+    }
 }
 
 namespace UI
@@ -132,6 +159,11 @@ namespace UI
         std::unique_ptr<PointLocalizerVoxelized> mp_localizer_voxelized = std::make_unique<PointLocalizerVoxelized>();
         std::unique_ptr<Rendering::RenderableVoxelGrid> mp_renderable_voxel_grid;
         std::map<size_t, QString> m_index_to_name_map;
+
+        // kd tree based stuff
+        std::unique_ptr<TrianglesTree> mp_kd_tree;
+        std::list<Triangle> m_kd_transformed_triangles;
+        std::unordered_map<Triangle*, QStringView> m_kd_triangle_to_mesh_map;
     };
 
     LocalizeDialog::LocalizeDialog(QDialog* ip_parent)
@@ -163,30 +195,67 @@ namespace UI
         is_connected = connect(ui.mp_spin_z, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, update_preview);
         Q_ASSERT(is_connected);
 
-        // voxel based
+        auto invalidate = [this]
+        {
+            mp_impl->mp_localizer_voxelized.reset();
+            mp_impl->mp_renderable_voxel_grid.reset();
+
+            mp_impl->mp_kd_tree.reset();
+            mp_impl->m_kd_triangle_to_mesh_map.clear();
+            mp_impl->m_kd_transformed_triangles.clear();
+        };
+
+        is_connected = connect(p_meshes_model, &QAbstractItemModel::rowsAboutToBeRemoved, this, [=](const QModelIndex&, int i_first, int i_last)
+        {
+            bool changed = false;
+
+            for (int i = i_first; i <= i_last; ++i)
+            {
+                auto index = p_meshes_model->index(i_first, 0);
+                auto data = index.data(Qt::CheckStateRole);
+                if (data.isValid() && data.value<Qt::CheckState>() == Qt::Checked)
+                {
+                    changed = true;
+                }
+            }
+
+            if (!changed)
+                return;
+
+            invalidate();
+        });
+        Q_ASSERT(is_connected);
+
+        is_connected = connect(p_meshes_model, &QAbstractItemModel::modelAboutToBeReset, this, invalidate);
+        Q_ASSERT(is_connected);
+
+        _InitVoxelBased();
+        _InitKDTreeBased();
+
+
+        Rendering::RenderablesController::GetInstance().AddRenderable(*mp_impl->mp_preview);
+
+        Q_UNUSED(is_connected);
+    }
+
+    LocalizeDialog::~LocalizeDialog()
+    {
+        Rendering::RenderablesController::GetInstance().RemoveRenderable(mp_impl->mp_preview.get());
+    }
+
+    void LocalizeDialog::_InitVoxelBased()
+    {
+        Ui::LocalizeDialog& ui = *mp_impl->mp_ui;
+        auto p_meshes_model = ui.mp_list_meshes->model();
+
+        bool is_connected = false;
+
         is_connected = connect(ui.mp_btn_voxel_build, &QAbstractButton::clicked, this, [=]
         {
             mp_impl->mp_renderable_voxel_grid.reset();
             mp_impl->mp_localizer_voxelized = std::make_unique<PointLocalizerVoxelized>();
 
-            std::vector<std::pair<Mesh*, TransformMatrix>> meshes;
-            for (int i = 0; i < p_meshes_model->rowCount(); ++i)
-            {
-                auto index = p_meshes_model->index(i, 0);
-
-                if (index.data(Qt::CheckStateRole).value<Qt::CheckState>() != Qt::Checked)
-                    continue;
-
-                auto renderable = index.data(RenderablesModel::RawRenderablePtr);
-                if (!renderable.isValid())
-                    continue;
-
-                auto p_renderable = qobject_cast<Rendering::RenderableMesh*>(renderable.value<Rendering::IRenderable*>());
-                if (!p_renderable)
-                    continue;
-
-                meshes.emplace_back(p_renderable->GetMesh(), p_renderable->GetTransform());
-            }
+            auto meshes = _GetMeshesWithTransformation(p_meshes_model);
 
             std::vector<size_t> indexes;
             indexes.reserve(meshes.size());
@@ -300,13 +369,104 @@ namespace UI
         Q_ASSERT(is_connected);
 
         Q_UNUSED(is_connected);
-
-        Rendering::RenderablesController::GetInstance().AddRenderable(*mp_impl->mp_preview);
     }
 
-    LocalizeDialog::~LocalizeDialog()
+    void LocalizeDialog::_InitKDTreeBased()
     {
-        Rendering::RenderablesController::GetInstance().RemoveRenderable(mp_impl->mp_preview.get());
+        bool is_connected = false;
+
+        is_connected = connect(mp_impl->mp_ui->mp_btn_kd_build, &QAbstractButton::clicked, this, [=]
+        {
+            mp_impl->mp_kd_tree = std::make_unique<TrianglesTree>();
+            mp_impl->m_kd_triangle_to_mesh_map.clear();
+            mp_impl->m_kd_transformed_triangles.clear();
+
+            double elapsed_time_sec = 0;
+            auto builder = [&]
+            {
+                auto meshes = _GetMeshesWithTransformation(mp_impl->mp_ui->mp_list_meshes->model());
+
+                std::vector<Triangle*> triangles;
+                for (const auto& mesh_transform : meshes)
+                {
+                    const auto p_mesh = mesh_transform.first;
+                    const auto& transform = mesh_transform.second;
+
+                    for (size_t i = 0; i < p_mesh->GetTrianglesCount(); ++i)
+                    {
+                        if (auto p_triangle = p_mesh->GetTriangle(i).lock())
+                        {
+                            auto point1 = p_triangle->GetPoint(0);
+                            auto point2 = p_triangle->GetPoint(1);
+                            auto point3 = p_triangle->GetPoint(2);
+                            transform.ApplyTransformation(point1);
+                            transform.ApplyTransformation(point2);
+                            transform.ApplyTransformation(point3);
+
+                            mp_impl->m_kd_transformed_triangles.emplace_back(point1, point2, point3);
+                            mp_impl->m_kd_triangle_to_mesh_map[&mp_impl->m_kd_transformed_triangles.back()] = QStringView(p_mesh->GetName());
+                            triangles.emplace_back(&mp_impl->m_kd_transformed_triangles.back());
+                        }
+                        else
+                        {
+                            assert(false);
+                        }
+                    }
+                }
+
+                auto time_on_start = std::chrono::system_clock::now();
+                mp_impl->mp_kd_tree->Build(triangles);
+                auto time_on_finish = std::chrono::system_clock::now();
+                std::chrono::duration<double> diff = time_on_finish - time_on_start;
+                elapsed_time_sec = diff.count();
+            };
+
+            UI::RunInThread(builder, "Build K-d Tree");
+
+            _LogMessage(QString("Build of k-d tree finished, elapsed time: %1 sec.").arg(QString::number(elapsed_time_sec, 'f')));
+
+            // todo renderable
+        });
+        Q_ASSERT(is_connected);
+
+        is_connected = connect(mp_impl->mp_ui->mp_btn_kd_localize, &QAbstractButton::clicked, this, [=]
+        {
+            if (!mp_impl->mp_kd_tree || !mp_impl->mp_kd_tree->WasBuild())
+            {
+                _LogMessage("Error, k-d tree was not built");
+                return;
+            }
+
+            double elapsed_time_sec = 0;
+            Triangle* p_triangle = nullptr;
+            auto localizer = [&]
+            {
+                Point3D point(mp_impl->mp_ui->mp_spin_x->value(),
+                              mp_impl->mp_ui->mp_spin_y->value(),
+                              mp_impl->mp_ui->mp_spin_z->value());
+
+                auto time_on_start = std::chrono::system_clock::now();
+                mp_impl->mp_kd_tree->Query(p_triangle, point);
+                auto time_on_finish = std::chrono::system_clock::now();
+                std::chrono::duration<double> diff = time_on_finish - time_on_start;
+                elapsed_time_sec = diff.count();
+            };
+
+            UI::RunInThread(localizer, "Localizing point");
+
+            if (p_triangle) // check normal
+            {
+                _LogMessage(QString("Point is located at mesh with name: %1").arg(mp_impl->m_kd_triangle_to_mesh_map[p_triangle]));
+            }
+            else
+            {
+                _LogMessage("Point is located outside of all meshes");
+            }
+            _LogMessage(QString("Elapsed time: %1 sec.").arg(QString::number(elapsed_time_sec, 'f')));
+        });
+        Q_ASSERT(is_connected);
+
+        Q_UNUSED(is_connected);
     }
 
     void LocalizeDialog::_LogMessage(const QString& i_str) const

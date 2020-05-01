@@ -10,6 +10,7 @@
 
 class QString;
 
+
 namespace UI
 {
     namespace Details
@@ -50,6 +51,9 @@ namespace UI
 
 
     private:
+        void _InitVoxelBased();
+        void _InitKDTreeBased();
+
         void _LogMessage(const QString& i_str) const;
 
         struct Impl;
