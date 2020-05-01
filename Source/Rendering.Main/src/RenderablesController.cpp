@@ -21,7 +21,7 @@ namespace Rendering
             return;
 
         m_renderables.insert(&i_renderable);
-
+        //todo disconnect on remove
         bool is_connected = connect(&i_renderable, &IRenderable::RenderableMaterialChanged, this, [this, p_renderable = &i_renderable]
         {
             emit RenderableMaterialChanged(p_renderable);
@@ -42,7 +42,7 @@ namespace Rendering
 
         is_connected = connect(&i_renderable, &IRenderable::RenderableDestructed, this, [this, p_renderable = &i_renderable]
         {
-            emit RenderableRemoved(p_renderable);
+            RemoveRenderable(p_renderable);
         });
         Q_ASSERT(is_connected);
 

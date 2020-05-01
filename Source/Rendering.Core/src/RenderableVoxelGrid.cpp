@@ -34,7 +34,10 @@ namespace Rendering
         }
     }
 
-    RenderableVoxelGrid::~RenderableVoxelGrid() = default;
+    RenderableVoxelGrid::~RenderableVoxelGrid()
+    {
+        _OnDestructed();
+    }
 
     std::unique_ptr<Qt3DCore::QComponent> RenderableVoxelGrid::GetMaterial() const
     {

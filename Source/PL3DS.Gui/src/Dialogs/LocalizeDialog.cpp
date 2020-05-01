@@ -10,9 +10,12 @@
 
 #include <Math.Algos/PointLocalizerVoxelized.h>
 
+#include <Math.DataStructures/VoxelGrid.h>
+
 #include <Rendering.Core/RenderableMesh.h>
 #include <Rendering.Core/RenderablePoint.h>
 #include <Rendering.Core/RenderableSegment.h>
+#include <Rendering.Core/RenderableVoxelGrid.h>
 
 #include <Rendering.Main/RenderablesController.h>
 
@@ -52,15 +55,11 @@ namespace UI
             m_renderables.emplace_back(std::move(p_segment_x_axis));
             m_renderables.emplace_back(std::move(p_segment_y_axis));
             m_renderables.emplace_back(std::move(p_segment_z_axis));
-
-            //for (const auto& p_renderable : m_renderables)
-            //    Rendering::RenderablesController::GetInstance().AddRenderable(*p_renderable);
         }
 
         PointPreviewRenderable::~PointPreviewRenderable()
         {
-         //   for (const auto& p_renderable : m_renderables)
-         //       Rendering::RenderablesController::GetInstance().RemoveRenderable(p_renderable.get());
+            _OnDestructed();
         }
 
         std::unique_ptr<Qt3DCore::QComponent> PointPreviewRenderable::GetMaterial() const
@@ -131,6 +130,7 @@ namespace UI
 
         // voxel based stuff
         std::unique_ptr<PointLocalizerVoxelized> mp_localizer_voxelized = std::make_unique<PointLocalizerVoxelized>();
+        std::unique_ptr<Rendering::RenderableVoxelGrid> mp_renderable_voxel_grid;
         std::map<size_t, QString> m_index_to_name_map;
     };
 
@@ -166,6 +166,7 @@ namespace UI
         // voxel based
         is_connected = connect(ui.mp_btn_voxel_build, &QAbstractButton::clicked, this, [=]
         {
+            mp_impl->mp_renderable_voxel_grid.reset();
             mp_impl->mp_localizer_voxelized = std::make_unique<PointLocalizerVoxelized>();
 
             std::vector<std::pair<Mesh*, TransformMatrix>> meshes;
@@ -218,6 +219,8 @@ namespace UI
                 mp_impl->m_index_to_name_map[indexes[i]] = meshes[i].first->GetName();
             }
 
+            mp_impl->mp_renderable_voxel_grid = std::make_unique<Rendering::RenderableVoxelGrid>(*mp_impl->mp_localizer_voxelized->GetCachedGrid().lock());
+            RenderablesModel::GetInstance().AddRenderable(mp_impl->mp_renderable_voxel_grid.get(), "Voxelization");
         });
         Q_ASSERT(is_connected);
 
@@ -264,6 +267,37 @@ namespace UI
         });
         Q_ASSERT(is_connected);
 
+        is_connected = connect(ui.mp_btn_toggle_voxelization, &QAbstractButton::clicked, this, [=]
+        {
+            if (!mp_impl->mp_renderable_voxel_grid)
+                return;
+
+            auto current = mp_impl->mp_renderable_voxel_grid->GetRenderingStyle();
+            if (current == Rendering::RenderableVoxelGrid::RenderingStyle::Opaque)
+                mp_impl->mp_renderable_voxel_grid->SetRenderingStyle(Rendering::RenderableVoxelGrid::RenderingStyle::Transparent);
+            else if (current == Rendering::RenderableVoxelGrid::RenderingStyle::Transparent)
+                mp_impl->mp_renderable_voxel_grid->SetRenderingStyle(Rendering::RenderableVoxelGrid::RenderingStyle::Opaque);
+            else
+                Q_ASSERT(false);
+        });
+        Q_ASSERT(is_connected);
+
+        is_connected = connect(ui.mp_btn_show_hide_voxelization, &QAbstractButton::clicked, this, [=]
+        {
+            if (!mp_impl->mp_renderable_voxel_grid)
+                return;
+
+            auto& model = RenderablesModel::GetInstance();
+            auto indexes = model.match(model.index(0, 0), RenderablesModel::RawRenderablePtr, QVariant::fromValue<Rendering::IRenderable*>(mp_impl->mp_renderable_voxel_grid.get()), 1, Qt::MatchExactly);
+            if (indexes.empty())
+                return;
+
+            Q_ASSERT(indexes.size() == 1);
+            auto index = indexes.at(0);
+            bool is_visible = index.data(RenderablesModel::Visibility).toBool();
+            model.SetRenderableVisible(mp_impl->mp_renderable_voxel_grid.get(), !is_visible);
+        });
+        Q_ASSERT(is_connected);
 
         Q_UNUSED(is_connected);
 

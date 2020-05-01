@@ -24,7 +24,7 @@ namespace Rendering
 	public:
         ~IRenderable() override
         {
-            Q_EMIT RenderableDestructed();
+            _OnDestructed();
         }
 
 		virtual std::unique_ptr<Qt3DCore::QComponent> GetMaterial() const = 0;
@@ -47,5 +47,19 @@ namespace Rendering
         void RenderableRendererChanged();
 
 		void RenderableDestructed();
+
+    protected:
+        // Should be called in destructor of your implementation in case you override GetNestedRenderables
+        void _OnDestructed()
+        {
+            if (m_destructed)
+                return;
+
+            m_destructed = true;
+            Q_EMIT RenderableDestructed();
+        }
+
+    private:
+        bool m_destructed = false;
 	};
 }

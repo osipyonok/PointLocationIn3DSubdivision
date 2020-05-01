@@ -37,6 +37,8 @@ public:
     // returns index of mesh or std::numeric_limits<size_t>::max() if point is outside
     MATH_ALGOS_API size_t Localize(const Point3D& i_point, ReturnCode* op_return_code = nullptr);
 
+    MATH_ALGOS_API std::weak_ptr<VoxelGrid> GetCachedGrid() const;
+
 private:
     struct Impl;
     std::unique_ptr<Impl> mp_impl;

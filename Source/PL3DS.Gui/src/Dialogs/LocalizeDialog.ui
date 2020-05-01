@@ -47,22 +47,6 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="0">
-           <spacer name="horizontalSpacer_4">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
           <item row="2" column="1">
            <widget class="QLabel" name="label_4">
             <property name="text">
@@ -113,22 +97,6 @@
             </property>
            </spacer>
           </item>
-          <item row="1" column="0">
-           <spacer name="horizontalSpacer_2">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
           <item row="2" column="2">
            <widget class="QDoubleSpinBox" name="mp_spin_z">
             <property name="decimals">
@@ -153,77 +121,8 @@
         </item>
         <item>
          <layout class="QGridLayout" name="gridLayout_2">
-          <item row="1" column="1">
-           <widget class="QLabel" name="label_6">
-            <property name="text">
-             <string>Voxel size Y:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QLabel" name="label_7">
-            <property name="text">
-             <string>Voxel size Z:</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="0">
            <spacer name="horizontalSpacer_7">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="0" column="1">
-           <widget class="QLabel" name="label_5">
-            <property name="text">
-             <string>Voxel size X:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <spacer name="horizontalSpacer_6">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="2" column="2">
-           <widget class="QDoubleSpinBox" name="mp_spin_voxel_z">
-            <property name="decimals">
-             <number>4</number>
-            </property>
-            <property name="minimum">
-             <double>-200000.000000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>200000.000000000000000</double>
-            </property>
-            <property name="value">
-             <double>0.300000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <spacer name="horizontalSpacer_5">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
@@ -254,6 +153,13 @@
             </property>
            </widget>
           </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Voxel size X:</string>
+            </property>
+           </widget>
+          </item>
           <item row="1" column="2">
            <widget class="QDoubleSpinBox" name="mp_spin_voxel_y">
             <property name="decimals">
@@ -270,6 +176,29 @@
             </property>
            </widget>
           </item>
+          <item row="2" column="2">
+           <widget class="QDoubleSpinBox" name="mp_spin_voxel_z">
+            <property name="decimals">
+             <number>4</number>
+            </property>
+            <property name="minimum">
+             <double>-200000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>200000.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>0.300000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLabel" name="label_7">
+            <property name="text">
+             <string>Voxel size Z:</string>
+            </property>
+           </widget>
+          </item>
           <item row="3" column="1">
            <widget class="QPushButton" name="mp_btn_voxel_build">
             <property name="text">
@@ -277,26 +206,31 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
-           <spacer name="horizontalSpacer_3">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
           <item row="3" column="2">
            <widget class="QPushButton" name="mp_btn_voxel_localize">
             <property name="text">
              <string>Localize</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>Voxel size Y:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QPushButton" name="mp_btn_toggle_voxelization">
+            <property name="text">
+             <string>Toggle view mode</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="2">
+           <widget class="QPushButton" name="mp_btn_show_hide_voxelization">
+            <property name="text">
+             <string>Show / Hide</string>
             </property>
            </widget>
           </item>
@@ -352,6 +286,20 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>mp_spin_x</tabstop>
+  <tabstop>mp_spin_y</tabstop>
+  <tabstop>mp_spin_z</tabstop>
+  <tabstop>mp_spin_voxel_x</tabstop>
+  <tabstop>mp_spin_voxel_y</tabstop>
+  <tabstop>mp_spin_voxel_z</tabstop>
+  <tabstop>mp_btn_voxel_build</tabstop>
+  <tabstop>mp_btn_voxel_localize</tabstop>
+  <tabstop>mp_btn_toggle_voxelization</tabstop>
+  <tabstop>mp_btn_show_hide_voxelization</tabstop>
+  <tabstop>mp_list_meshes</tabstop>
+  <tabstop>mp_text_log</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

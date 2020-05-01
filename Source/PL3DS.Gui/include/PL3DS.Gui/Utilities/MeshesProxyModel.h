@@ -17,5 +17,5 @@ public:
 
 private:
 
-    mutable std::unordered_map<int, Qt::CheckState> m_checked_states;
+    std::unordered_map<int, Qt::CheckState> m_checked_states;
 };

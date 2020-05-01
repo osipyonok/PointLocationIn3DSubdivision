@@ -27,7 +27,7 @@ struct PointLocalizerVoxelized::Impl
     size_t m_next_mesh_index = 0;
     std::list<Triangle> m_transformed_triangles;
     std::unordered_map<Triangle*, size_t> m_triangles_to_mesh_map;
-    std::unique_ptr<VoxelGrid> mp_voxelization;
+    std::shared_ptr<VoxelGrid> mp_voxelization;
 };
 
 PointLocalizerVoxelized::PointLocalizerVoxelized()
@@ -127,4 +127,9 @@ size_t PointLocalizerVoxelized::Localize(const Point3D& i_point, ReturnCode* op_
     }
 
     return std::numeric_limits<size_t>::max();
+}
+
+std::weak_ptr<VoxelGrid> PointLocalizerVoxelized::GetCachedGrid() const
+{
+    return mp_impl->mp_voxelization;
 }

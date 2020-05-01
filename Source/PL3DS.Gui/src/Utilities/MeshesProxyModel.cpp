@@ -61,12 +61,13 @@ QVariant MeshesProxyModel::data(const QModelIndex& i_index, int i_role) const
         return QSortFilterProxyModel::data(i_index, i_role);
 
     auto row = i_index.row();
+    auto it = m_checked_states.find(row);
     if (m_checked_states.find(row) == m_checked_states.end())
     {
-        m_checked_states[row] = Qt::Unchecked;
+        return Qt::Unchecked;
     }
 
-    return m_checked_states[row];
+    return it->second;
 }
 
 bool MeshesProxyModel::setData(const QModelIndex& i_index, const QVariant& i_value, int i_role)
