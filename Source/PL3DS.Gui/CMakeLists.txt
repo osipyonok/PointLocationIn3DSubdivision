@@ -14,6 +14,7 @@ file(GLOB_RECURSE Sources   "src/*.cpp")
 file(GLOB_RECURSE Forms     "src/*.ui")
 file(GLOB_RECURSE Resoutces "resources/*.qrc")
 
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
 add_executable(${ProjectName} ${Headers} ${Sources} ${Forms} ${Resources})    
 set_target_properties(PL3DS.Gui PROPERTIES OUTPUT_NAME "${ProjectName}")
 
