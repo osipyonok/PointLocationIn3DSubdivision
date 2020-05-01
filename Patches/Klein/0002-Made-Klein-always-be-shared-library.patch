@@ -1,7 +1,7 @@
-From d8072f527d4adfb67d400732f80a99377bfa9af0 Mon Sep 17 00:00:00 2001
+From 7af767b33581c81e08e60ae202f1d19ab06d8c76 Mon Sep 17 00:00:00 2001
 From: Max Osipyonok <perepishka@mail.ru>
 Date: Tue, 31 Dec 2019 18:11:26 +0200
-Subject: [PATCH 2/3] Made Klein always be shared library
+Subject: [PATCH 2/4] Made Klein always be shared library
 
 ---
  src/CMakeLists.txt | 3 +--

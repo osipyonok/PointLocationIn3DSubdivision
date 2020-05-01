@@ -273,7 +273,14 @@ namespace UI
         auto& cached_data = mp_impl->m_renderables_cache[ip_renderable];
 
         cached_data.mp_mesh->setEnabled(false);
-        //todo: try to delete stuff
+
+        if (auto p_root = m_aspectEngine->rootEntity())
+        {
+            cached_data.mp_mesh->deleteLater();
+            cached_data.mp_transformation->deleteLater();
+            cached_data.mp_material->deleteLater();
+            cached_data.mp_renderer->deleteLater();
+        }
 
         mp_impl->m_renderables_cache.erase(ip_renderable);
     }
@@ -356,44 +363,4 @@ namespace UI
             _OnRenderableAdded(p_new_renderable);
     }
 
-    void MainWindow3D::UpdateSceneGraph()
-    {
-        if (!isExposed() || !isVisible()) // suppress updates of invisible window
-            return;
-
-        // todo: update only changed renderables
-        if (auto p_root = m_aspectEngine->rootEntity())
-        {
-            auto old_child_nodes = p_root->childNodes();
-
-            // collect new meshes
-            _CreateMeshes(p_root.get());
-
-            // remove old meshes
-            for (auto& p_child : old_child_nodes)
-            {
-                auto prop = p_child->property(_property_mesh);
-                if (prop.isValid() && prop.canConvert<bool>() && prop.toBool())
-                {
-                    auto p_mesh = qobject_cast<Qt3DCore::QEntity*>(p_child);
-                    Q_ASSERT(p_mesh);
-                    p_mesh->setEnabled(false);
-                    p_mesh->setProperty(_property_mesh, false); // no need to do all the same twice
-
-                    // we can't delete mesh here because of crash in qt but we still can delete some stuff
-                    for (auto p_node : p_mesh->childNodes())
-                    {
-                        if (auto p_entity = qobject_cast<Qt3DCore::QEntity*>(p_node))
-                        {
-                            p_entity->deleteLater();
-                        }
-                        else if (auto p_component = qobject_cast<Qt3DRender::QGeometryRenderer*>(p_node))
-                        {
-                            p_component->deleteLater();
-                        }
-                    }
-                }
-            }
-        }
-    }
 }

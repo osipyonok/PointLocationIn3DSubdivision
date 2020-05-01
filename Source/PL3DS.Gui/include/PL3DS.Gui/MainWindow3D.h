@@ -28,9 +28,6 @@ namespace UI
 
 		Qt3DRender::QRenderSettings* createRenderSettings(Qt3DCore::QEntity* root) override;
 
-	public Q_SLOTS:
-		void UpdateSceneGraph();
-
     private:
         void _CreateMeshFor(const Rendering::IRenderable* ip_renderable, Qt3DCore::QEntity* ip_parent) const;
         void _CreateMeshes(Qt3DCore::QEntity* ip_parent) const;
