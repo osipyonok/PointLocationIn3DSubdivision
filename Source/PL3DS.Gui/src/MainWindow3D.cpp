@@ -30,15 +30,15 @@
 #include <Qt3DCore/QAspectEngine>
 #include <Qt3DInput/QInputSettings>
 
+#include <Qt3DRender/QObjectPicker>
+#include <Qt3DRender/QPickEvent>
+
 #include <QCoreApplication>
 #include <QString>
-
 #include <unordered_map>
 
 namespace
 {
-    const auto _property_mesh = "PROPERTY_MAIN_WINDOW_MESH";
-
     struct RenderableData
     {
         QPointer<Qt3DCore::QComponent> mp_material;
@@ -56,6 +56,7 @@ namespace UI
         QPointer<Qt3DRender::QCamera>              mp_camera;
         QPointer<Klein::TrackballCameraController> mp_camera_controller;
         QPointer<Klein::WBOITCompositor>           mp_compositor;
+        QPointer<Qt3DRender::QObjectPicker>        mp_picker;
 
         mutable std::unordered_map<const Rendering::IRenderable*, RenderableData> m_renderables_cache;
     };
@@ -137,12 +138,25 @@ namespace UI
         mp_impl->mp_camera->setPosition(QVector3D(1.f, 1.f, 1.f));
         mp_impl->mp_camera->setViewCenter(QVector3D(0, 0, 0));
         auto aspect = (this->width() + 0.0f) / this->height();
-        mp_impl->mp_camera->lens()->setPerspectiveProjection(60.0f, aspect, 0.1f, 100.0f);
+        mp_impl->mp_camera->lens()->setPerspectiveProjection(60.0f, aspect, 0.01f, 1500.0f);
 
         mp_impl->mp_camera_controller = new Klein::TrackballCameraController(rootEntity);
         mp_impl->mp_camera_controller->setCamera(mp_impl->mp_camera);
         mp_impl->mp_camera_controller->setWindowSize(size());
-        
+
+        mp_impl->mp_picker = new Qt3DRender::QObjectPicker(rootEntity);
+        mp_impl->mp_picker->setHoverEnabled(true);
+        mp_impl->mp_picker->setDragEnabled(true);
+        rootEntity->addComponent(mp_impl->mp_picker.data());
+        bool is_connected = false;
+        is_connected = connect(mp_impl->mp_picker.data(), &Qt3DRender::QObjectPicker::moved, this, [this](Qt3DRender::QPickEvent* p_event)
+        {
+            auto point = p_event->worldIntersection();
+            emit ApproximatedPickedPoint(Point3D{ point.x(), point.y(), point.z() });
+        });
+        Q_ASSERT(is_connected);
+        Q_UNUSED(is_connected);
+
         return rootEntity;
     }
 
@@ -206,6 +220,9 @@ namespace UI
 
         auto settings = new Qt3DRender::QRenderSettings(root);
         settings->setActiveFrameGraph(rootNode);
+
+        settings->pickingSettings()->setPickMethod(Qt3DRender::QPickingSettings::TrianglePicking);
+
         return settings;
     }
 
@@ -226,7 +243,6 @@ namespace UI
         Q_ASSERT(p_transform);
 
         auto p_mesh = new Qt3DCore::QEntity(ip_parent);
-        p_mesh->setProperty(_property_mesh, true);
 
         RenderableData cache;
         cache.mp_mesh = p_mesh;

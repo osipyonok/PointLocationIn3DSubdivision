@@ -64,7 +64,11 @@ namespace
         is_connected = QObject::connect(i_ui.mp_btn_toggle_view_mode, &QAbstractButton::clicked, i_params.mp_toggle_view_mode_adction, &QAction::trigger);
         Q_ASSERT(is_connected);
 
-        is_connected = QObject::connect(i_ui.mp_btn_toggle_visibility, &QAbstractButton::clicked, i_params.mp_toggle_visibility_action, &QAction::trigger);
+        is_connected = QObject::connect(i_ui.mp_btn_toggle_visibility, &QAbstractButton::clicked, i_params.mp_toggle_visibility_action, [=]
+        {
+            i_params.mp_toggle_visibility_action->toggle();
+            update_buttons_to_current_state();
+        });
         Q_ASSERT(is_connected);
 
         is_connected = QObject::connect(i_ui.mp_btn_transform, &QAbstractButton::clicked, i_params.mp_translate_action, &QAction::trigger);
@@ -106,6 +110,17 @@ namespace
         });
         Q_ASSERT(is_connected);
 
+        is_connected = QObject::connect(ip_window_3d, &UI::MainWindow3D::ApproximatedPickedPoint, i_ui.mp_label_picked_point, [=](const Point3D& i_point)
+        {
+            auto text = QString("(%1, %2, %3)")
+                       .arg(QString::number(i_point.GetX(), 'f'))
+                       .arg(QString::number(i_point.GetY(), 'f'))
+                       .arg(QString::number(i_point.GetZ(), 'f'));
+
+            i_ui.mp_label_picked_point->setText(text);
+        });
+        Q_ASSERT(is_connected);
+
         update_buttons_to_current_state();
 
         Q_UNUSED(is_connected);
@@ -133,5 +148,10 @@ namespace UI
 
 
     MainWidget::~MainWidget() = default;
+
+    void MainWidget::closeEvent(QCloseEvent* ip_event)
+    {
+        qApp->closeAllWindows();
+    }
 
 }

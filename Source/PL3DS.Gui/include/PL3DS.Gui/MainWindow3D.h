@@ -2,6 +2,8 @@
 
 #include <Klein/Gui/AbstractQt3DWindow.h>
 
+#include <Math.Core/Point3D.h>
+
 #include <memory>
 #include <vector>
 
@@ -20,6 +22,9 @@ namespace UI
 
         void ViewAll();
         void ViewRenderable(const Rendering::IRenderable* ip_renderable);
+
+    Q_SIGNALS:
+        void ApproximatedPickedPoint(const Point3D&);
 
 	protected:
 		void resizeEvent(QResizeEvent*) override;
@@ -50,3 +55,5 @@ namespace UI
 		std::unique_ptr<Impl> mp_impl;
 	};
 }
+
+Q_DECLARE_METATYPE(Point3D);

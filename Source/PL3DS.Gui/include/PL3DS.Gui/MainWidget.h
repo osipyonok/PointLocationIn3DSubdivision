@@ -42,6 +42,9 @@ namespace UI
 
         ~MainWidget() override;
 
+    protected:
+        void closeEvent(QCloseEvent* ip_event) override;
+
     };
 
 }
