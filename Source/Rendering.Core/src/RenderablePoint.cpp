@@ -72,7 +72,8 @@ void Rendering::RenderablePoint::Transform(const TransformMatrix& i_transform)
     if (i_transform == TransformMatrix{})
         return;
 
-    mp_impl->m_transform *= i_transform;
+    mp_impl->m_transform.PreMultiply(i_transform);
+
     emit RenderableTransformationChanged();
 }
 

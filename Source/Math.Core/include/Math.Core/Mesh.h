@@ -7,6 +7,7 @@
 #include <memory>
 #include <vector>
 
+class BoundingBox;
 class MeshPoint;
 class MeshTriangle;
 class Point3D;
@@ -55,6 +56,11 @@ public:
 
     const QString& GetName() const;
     void SetName(const QString& i_name) const;
+
+    const BoundingBox& GetBoundingBox() const;
+
+private:
+    void _InvalidateCache();
 
 private:
 	struct Impl;

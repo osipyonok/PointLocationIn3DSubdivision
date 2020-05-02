@@ -345,7 +345,16 @@ namespace Actions
     {
         void SetCurrentRenderable(Rendering::IRenderable* ip_renderable)
         {
+            if (g_current_renderable == ip_renderable)
+                return;
+
+            if (auto p_mesh_renderable = qobject_cast<Rendering::RenderableMesh*>(g_current_renderable))
+                p_mesh_renderable->SetDrawBoundingBoxContours(false);
+
             g_current_renderable = ip_renderable;
+
+            if (auto p_mesh_renderable = qobject_cast<Rendering::RenderableMesh*>(g_current_renderable))
+                p_mesh_renderable->SetDrawBoundingBoxContours(true);
         }
 
         Rendering::IRenderable* GetCurrentRenderable()

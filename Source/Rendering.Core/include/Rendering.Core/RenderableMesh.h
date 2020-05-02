@@ -40,11 +40,18 @@ namespace Rendering
         void SetRenderingStyle(RenderingStyle i_style);
         void Transform(const TransformMatrix& i_transform);
 
+        void SetDrawBoundingBoxContours(bool i_draw);
+
+        std::vector<IRenderable*> GetNestedRenderables() const override;
+
 	private:
 		QPointer<Mesh> mp_mesh;
 
         QColor m_color = QColor(0, 0, 0);
         TransformMatrix m_transform;
         RenderingStyle m_rendering_style = RenderingStyle::Opaque;
+
+        bool m_draw_bbox_contours = false;
+        std::vector<std::unique_ptr<Rendering::IRenderable>> m_bbox_contours;
 	};
 }

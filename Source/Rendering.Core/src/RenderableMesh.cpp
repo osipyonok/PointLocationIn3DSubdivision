@@ -1,7 +1,9 @@
 #include "Rendering.Core/RenderableMesh.h"
 
+#include "Rendering.Core/RenderableSegment.h"
 #include "Rendering.Core/RenderingUtilities.h"
 
+#include <Math.Core/BoundingBox.h>
 #include <Math.Core/Mesh.h>
 
 #include <Klein/Render/UnlitMaterial.h>
@@ -15,6 +17,8 @@
 #include <Qt3DRender/QMesh>
 
 #include <Qt3DRender>
+
+#include <boost/scope_exit.hpp>
 
 
 namespace Rendering
@@ -124,7 +128,92 @@ namespace Rendering
         if (i_transform == TransformMatrix{})
             return;
 
-        m_transform *= i_transform;
+        m_transform.PreMultiply(i_transform);
+
+        for (const auto& p_nested_renderable : m_bbox_contours)
+        {
+            p_nested_renderable->Transform(i_transform);
+        }
+
         emit RenderableTransformationChanged();
+    }
+
+    std::vector<IRenderable*> RenderableMesh::GetNestedRenderables() const
+    {
+        std::vector<IRenderable*> renderables;
+        renderables.reserve(m_bbox_contours.size());
+
+        for (auto& p_renderable : m_bbox_contours)
+            renderables.emplace_back(p_renderable.get());
+
+        return std::move(renderables);
+    }
+
+    void RenderableMesh::SetDrawBoundingBoxContours(bool i_draw)
+    {
+        if (i_draw == m_draw_bbox_contours)
+            return;
+
+        m_draw_bbox_contours = i_draw;
+
+        emit NestedRenderablesAboutToBeReset();
+
+        BOOST_SCOPE_EXIT(this_)
+        {
+            emit this_->NestedRenderablesReset();
+        }
+        BOOST_SCOPE_EXIT_END
+
+        if (!m_draw_bbox_contours)
+        {
+            m_bbox_contours.clear();
+            return;
+        }
+
+        const auto& bbox = mp_mesh->GetBoundingBox();
+        auto bbox_min = bbox.GetMin();
+        auto bbox_max = bbox.GetMax();
+
+        //zyx ordered
+        Point3D bottom_plane[4] = 
+        {
+            bbox_min,
+            Point3D(bbox_max.GetX(), bbox_min.GetY(), bbox_min.GetZ()),
+            Point3D(bbox_min.GetX(), bbox_max.GetY(), bbox_min.GetZ()),
+            Point3D(bbox_max.GetX(), bbox_max.GetY(), bbox_min.GetZ())
+        };
+        Point3D top_plane[4] =
+        {
+            Point3D(bbox_min.GetX(), bbox_min.GetY(), bbox_max.GetZ()),
+            Point3D(bbox_max.GetX(), bbox_min.GetY(), bbox_max.GetZ()),
+            Point3D(bbox_min.GetX(), bbox_max.GetY(), bbox_max.GetZ()),
+            bbox_max
+        };
+
+        //bottom plane
+        m_bbox_contours.emplace_back(std::make_unique<RenderableSegment>(bottom_plane[0], bottom_plane[1]));
+        m_bbox_contours.emplace_back(std::make_unique<RenderableSegment>(bottom_plane[0], bottom_plane[2]));
+        m_bbox_contours.emplace_back(std::make_unique<RenderableSegment>(bottom_plane[1], bottom_plane[3]));
+        m_bbox_contours.emplace_back(std::make_unique<RenderableSegment>(bottom_plane[2], bottom_plane[3]));
+
+        //top plane
+        m_bbox_contours.emplace_back(std::make_unique<RenderableSegment>(top_plane[0], top_plane[1]));
+        m_bbox_contours.emplace_back(std::make_unique<RenderableSegment>(top_plane[0], top_plane[2]));
+        m_bbox_contours.emplace_back(std::make_unique<RenderableSegment>(top_plane[1], top_plane[3]));
+        m_bbox_contours.emplace_back(std::make_unique<RenderableSegment>(top_plane[2], top_plane[3]));
+
+        //front face
+        m_bbox_contours.emplace_back(std::make_unique<RenderableSegment>(bottom_plane[0], top_plane[0]));
+        m_bbox_contours.emplace_back(std::make_unique<RenderableSegment>(bottom_plane[1], top_plane[1]));
+
+        //back face
+        m_bbox_contours.emplace_back(std::make_unique<RenderableSegment>(bottom_plane[2], top_plane[2]));
+        m_bbox_contours.emplace_back(std::make_unique<RenderableSegment>(bottom_plane[3], top_plane[3]));
+
+        for (const auto& p_nested_renderable : m_bbox_contours)
+        {
+            p_nested_renderable->SetColor(QColor("orange"));
+            p_nested_renderable->Transform(m_transform);
+        }
     }
 }

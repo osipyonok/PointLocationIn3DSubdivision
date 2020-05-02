@@ -38,6 +38,8 @@ public:
     template<typename TDivisor>
     Matrix<T, N>& operator/=(const TDivisor& i_divisor);
 
+    Matrix<T, N>& PreMultiply(const Matrix<T, N>& i_other);
+
     //Matrix<T, N> operator+(const Matrix<T, N>& i_matrix) const;
     //Matrix<T, N> operator-(const Matrix<T, N>& i_matrix) const;
 
@@ -140,6 +142,13 @@ inline Matrix<T, N>& Matrix<T, N>::operator-=(const Matrix<T, N>& i_matrix)
     return *this;
 }
 
+
+template<typename T, size_t N>
+inline Matrix<T, N>& Matrix<T, N>::PreMultiply(const Matrix<T, N>& i_other)
+{
+    *this = i_other * (*this);
+    return *this;
+}
 
 template<typename T, size_t N>
 inline void Matrix<T, N>::MakeIdentity()

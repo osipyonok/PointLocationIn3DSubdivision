@@ -157,7 +157,8 @@ namespace Rendering
         if (i_transform == TransformMatrix{})
             return;
 
-        m_transform *= i_transform;
+        m_transform.PreMultiply(i_transform);
+
         emit RenderableTransformationChanged();
     }
 

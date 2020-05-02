@@ -1,5 +1,6 @@
 #include "Math.Core/Mesh.h"
 
+#include "Math.Core/BoundingBox.h"
 #include "Math.Core/MeshPoint.h"
 #include "Math.Core/MeshTriangle.h"
 
@@ -375,6 +376,8 @@ struct Mesh::Impl
     PointContainer m_points;
     TriangleContainer m_triangles;
     QString m_name;
+
+    std::unique_ptr<BoundingBox> mp_bbox_cache;
 };
 
 
@@ -396,7 +399,10 @@ MeshPoint* Mesh::AddPoint(const Point3D& i_point)
     if (auto p_point = GetPoint(i_point))
         return p_point;
 
-    return mp_impl->m_points.AddPoint(i_point);
+    auto p_point = mp_impl->m_points.AddPoint(i_point);
+
+    _InvalidateCache();
+    return p_point;
 }
 
 MeshPoint* Mesh::AddPoint(double i_x, double i_y, double i_z)
@@ -418,6 +424,8 @@ TriangleHandle Mesh::AddTriangle(const Point3D& i_a, const Point3D& i_b, const P
     p_pnt1->AddTriangle(p_triangle);
     p_pnt2->AddTriangle(p_triangle);
     p_pnt3->AddTriangle(p_triangle);
+
+    _InvalidateCache();
 
     return p_triangle;
 }
@@ -487,12 +495,16 @@ void Mesh::UpdatePointCoordinates(const Point3D& i_old_coordinates, const Point3
 
     mp_impl->m_points.UpdatePointCoordinates(i_old_coordinates, i_new_coordinates);
     mp_impl->m_triangles.UpdateVertexPosition(i_old_coordinates, i_new_coordinates);
+
+    _InvalidateCache();
 }
 
 void Mesh::RemovePoint(const Point3D& i_point)
 {
     mp_impl->m_triangles.RemoveTrianglesWithVertex(i_point);
     mp_impl->m_points.RemovePoint(i_point);
+
+    _InvalidateCache();
 }
 
 void Mesh::RemovePoint(double i_x, double i_y, double i_z)
@@ -509,6 +521,8 @@ void Mesh::RemoveTriangle(const Point3D& i_a, const Point3D& i_b, const Point3D&
     GetPoint(i_c)->RemoveTriangle(*p_triangle.lock());
 
     mp_impl->m_triangles.RemoveTriangle({ i_a, i_b, i_c });
+
+    _InvalidateCache();
 }
 
 size_t Mesh::GetPointsCount() const
@@ -529,4 +543,24 @@ const QString& Mesh::GetName() const
 void Mesh::SetName(const QString& i_name) const
 {
     mp_impl->m_name = i_name;
+}
+
+const BoundingBox& Mesh::GetBoundingBox() const
+{
+    if (!mp_impl->mp_bbox_cache)
+    {
+        mp_impl->mp_bbox_cache = std::make_unique<BoundingBox>();
+
+        for (size_t i = 0; i < GetPointsCount(); ++i)
+        {
+            mp_impl->mp_bbox_cache->AddPoint(*GetPoint(i));
+        }
+    }
+
+    return *mp_impl->mp_bbox_cache;
+}
+
+void Mesh::_InvalidateCache()
+{
+    mp_impl->mp_bbox_cache.reset();
 }

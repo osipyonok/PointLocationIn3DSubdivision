@@ -89,13 +89,13 @@ namespace
         {
             if (i_normal.Get(i) > 0)
             {
-                min.Set(-i_box_halfdelta.Get(i) - i_point.Get(i), i);
-                max.Set(i_box_halfdelta.Get(i) - i_point.Get(i), i);
+                min.Set(-i_box_halfdelta.Get(i) - i_point.Get(i), static_cast<short>(i));
+                max.Set(i_box_halfdelta.Get(i) - i_point.Get(i), static_cast<short>(i));
             }
             else
             {
-                min.Set(i_box_halfdelta.Get(i) - i_point.Get(i), i);
-                max.Set(-i_box_halfdelta.Get(i) - i_point.Get(i), i);
+                min.Set(i_box_halfdelta.Get(i) - i_point.Get(i), static_cast<short>(i));
+                max.Set(-i_box_halfdelta.Get(i) - i_point.Get(i), static_cast<short>(i));
             }
         }
 
