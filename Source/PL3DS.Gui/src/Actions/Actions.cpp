@@ -4,6 +4,7 @@
 
 #include "PL3DS.Gui/Dialogs/AddPointDialog.h"
 #include "PL3DS.Gui/Dialogs/LocalizeDialog.h"
+#include "PL3DS.Gui/Dialogs/SubdivideDialog.h"
 #include "PL3DS.Gui/Dialogs/TranslateDialog.h"
 
 #include "PL3DS.Gui/Utilities/GeneralUtilities.h"
@@ -15,6 +16,7 @@
 
 #include <Math.IO/MeshIO.h>
 
+#include <Math.Algos/Sqrt3Subdivision.h>
 #include <Math.Algos/Voxelizer.h>
 
 #include <Math.DataStructures/VoxelGrid.h>
@@ -28,6 +30,7 @@
 
 #include <list>
 #include <memory>
+
 
 namespace
 {
@@ -284,11 +287,55 @@ namespace
 
     void _DoLocalize()
     {
+        static bool nested_function_call_blocker_hack = false;
+        if (nested_function_call_blocker_hack)
+            return;
+        nested_function_call_blocker_hack = true;
+
         auto p_dialog = std::make_unique<UI::LocalizeDialog>();
+        bool result = QObject::connect(p_dialog.get(), &QObject::destroyed, [] { nested_function_call_blocker_hack = false; });
+        Q_ASSERT(result);
+        Q_UNUSED(result);
+
         p_dialog->setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
         p_dialog->setWindowFlag(Qt::WindowType::WindowMinimizeButtonHint, false);
         p_dialog->setWindowFlag(Qt::WindowType::WindowContextHelpButtonHint, false);
         p_dialog.release()->show();
+    }
+
+    void _DoSubdivide()
+    {
+        auto p_current_renderable = Actions::Configuration::GetCurrentRenderable();
+        if (!p_current_renderable)
+            return;
+        
+        auto p_mesh_renderable = qobject_cast<Rendering::RenderableMesh*>(p_current_renderable);
+        if (!p_mesh_renderable)
+            return;
+
+        auto p_mesh = p_mesh_renderable->GetMesh();
+        if (!p_mesh)
+            return;
+
+        UI::SubdivideParameters dialog_params;
+        UI::SubdivideDialog dialog(dialog_params);
+        if (dialog.exec() != QDialog::Accepted)
+            return;
+
+        auto subdivider = [&]
+        {
+            SQRT3MeshSubdivider::Params params;
+            params.m_edge_length_threshold = dialog_params.m_edge_length_threshold;
+            params.m_apply_smoothing = dialog_params.m_appy_smoothing;
+
+            SQRT3MeshSubdivider sqrt3;
+            sqrt3.SetParams(params);
+            sqrt3.Subdivide(*p_mesh);
+        };
+        UI::RunInThread(subdivider, "Subdivision");
+
+        // notify geometry changed
+        emit p_current_renderable->RenderableRendererChanged();
     }
 }
 
@@ -414,6 +461,20 @@ namespace Actions
             mp_action = std::make_unique<QAction>();
             mp_action->setText("Localize");
             bool is_connected = QObject::connect(mp_action.get(), &QAction::triggered, &_DoLocalize);
+            Q_ASSERT(is_connected);
+            Q_UNUSED(is_connected);
+        }
+        return mp_action.get();
+    }
+
+    QAction* GetSubdivideAction()
+    {
+        static std::unique_ptr<QAction> mp_action;
+        if (!mp_action)
+        {
+            mp_action = std::make_unique<QAction>();
+            mp_action->setText("Subdivide");
+            bool is_connected = QObject::connect(mp_action.get(), &QAction::triggered, &_DoSubdivide);
             Q_ASSERT(is_connected);
             Q_UNUSED(is_connected);
         }

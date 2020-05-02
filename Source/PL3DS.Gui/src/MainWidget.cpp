@@ -73,6 +73,9 @@ namespace
         is_connected = QObject::connect(i_ui.mp_btn_localize, &QAbstractButton::clicked, i_params.mp_localize_action, &QAction::trigger);
         Q_ASSERT(is_connected);
 
+        is_connected = QObject::connect(i_ui.mp_btn_subdivide, &QAbstractButton::clicked, i_params.mp_subdivide_action, &QAction::trigger);
+        Q_ASSERT(is_connected);
+
         is_connected = QObject::connect(i_ui.mp_list_renderables->selectionModel(), &QItemSelectionModel::selectionChanged, [=](const QItemSelection& i_selected, const QItemSelection& i_deselected)
         {
             if (!i_deselected.empty())

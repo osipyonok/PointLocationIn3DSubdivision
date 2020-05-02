@@ -31,6 +31,7 @@ namespace UI
             QAction* mp_voxelize_action = nullptr;
             QAction* mp_translate_action = nullptr;
             QAction* mp_localize_action = nullptr;
+            QAction* mp_subdivide_action = nullptr;
 
             std::function<void(Rendering::IRenderable*)> m_selected_renderable_setter;
             std::function<Rendering::IRenderable*(void)> m_selected_renderable_getter;

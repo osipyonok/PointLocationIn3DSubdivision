@@ -24,7 +24,7 @@ namespace UI
         };
 
         connect(ui.mp_button_box->button(QDialogButtonBox::Ok), &QPushButton::clicked, this, &QDialog::accept);
-        connect(ui.mp_button_box->button(QDialogButtonBox::Cancel), &QPushButton::clicked, this, &QDialog::accept);
+        connect(ui.mp_button_box->button(QDialogButtonBox::Cancel), &QPushButton::clicked, this, &QDialog::reject);
     }
     
     AddPointDialog::~AddPointDialog() = default;

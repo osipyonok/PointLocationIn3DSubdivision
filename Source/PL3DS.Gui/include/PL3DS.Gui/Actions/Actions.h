@@ -25,6 +25,7 @@ namespace Actions
     QAction* GetToggleViewModeAction();
     QAction* GetTranslateAction();
     QAction* GetLocalizeAction();
+    QAction* GetSubdivideAction();
 
 
     void RunLoadForMesh(const QString& i_file);
