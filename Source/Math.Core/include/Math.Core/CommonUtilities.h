@@ -28,3 +28,27 @@ enum class PointTriangleRelativeLocationResult
 };
 
 MATH_CORE_API PointTriangleRelativeLocationResult GetPointTriangleRelativeLocation(const Triangle& i_triangle, const Point3D& i_point);
+
+template<typename T>
+class ScopedStateRestorer final
+{
+public:
+    ScopedStateRestorer(T& i_state);
+    ~ScopedStateRestorer();
+private:
+    T& m_state_ref;
+    const T m_state_value;
+};
+
+template<typename T>
+inline ScopedStateRestorer<T>::ScopedStateRestorer(T& i_state)
+    : m_state_ref(i_state)
+    , m_state_value(i_state)
+{
+}
+
+template<typename T>
+inline ScopedStateRestorer<T>::~ScopedStateRestorer()
+{
+    m_state_ref = m_state_value;
+}

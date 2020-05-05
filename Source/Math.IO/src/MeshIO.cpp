@@ -45,7 +45,7 @@ namespace
 
                     point_normals.emplace_back(point, Vector3D{ loaded_point.Normal.X, loaded_point.Normal.Y, loaded_point.Normal.Z });
                 }
-
+                
                 for (size_t i = 0; i < loaded_mesh.Indices.size(); i += 3)
                 {
                     const Point3D& point1 = point_normals[loaded_mesh.Indices[i]].first;
@@ -77,7 +77,10 @@ namespace
             stlloader::Mesh stl;
             stlloader::parse_file(i_src.toStdString().c_str(), stl);
 
-            o_mesh.SetName(QString::fromStdString(stl.name));
+            if(!stl.name.empty())
+                o_mesh.SetName(QString::fromStdString(stl.name));
+            else
+                o_mesh.SetName(QFileInfo(i_src).fileName());
 
             for (const auto& facet : stl.facets)
             {
@@ -155,11 +158,11 @@ bool ReadMesh(const QString& i_src, Mesh& o_mesh)
 {
     QFileInfo file_info(i_src);
 
-    if (file_info.completeSuffix().toLower() == QStringLiteral("obj"))
+    if (file_info.suffix().toLower() == QStringLiteral("obj"))
     {
         return _LoadObj(i_src, o_mesh);
     }
-    else if (file_info.completeSuffix().toLower() == QStringLiteral("stl"))
+    else if (file_info.suffix().toLower() == QStringLiteral("stl"))
     {
         return _LoadStl(i_src, o_mesh);
     }

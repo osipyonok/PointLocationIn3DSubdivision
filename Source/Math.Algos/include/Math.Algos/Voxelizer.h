@@ -22,8 +22,8 @@ public:
     };
 
     void SetParams(const Params& i_params);
-    std::unique_ptr<VoxelGrid> Voxelize(const Mesh& i_mesh, Mesh& o_mesh); //  Mesh& o_mesh is deprecated
-    std::unique_ptr<VoxelGrid> Voxelize(const std::vector<Triangle*>& i_triangles, Mesh& o_mesh);
+    std::unique_ptr<VoxelGrid> Voxelize(const Mesh& i_mesh); 
+    std::unique_ptr<VoxelGrid> Voxelize(const std::vector<Triangle*>& i_triangles);
 
 private:
     Params m_params;

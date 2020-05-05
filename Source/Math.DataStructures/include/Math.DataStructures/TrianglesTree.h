@@ -104,6 +104,11 @@ struct MATH_DATASTRUCTURES_API BuildTrianglesTreeFunctor
             i_root.GetInfo().m_triangles.swap(right_triangles);
             return;
         }
+        if (left_triangles.size() == i_triangles.size() || right_triangles.size() == i_triangles.size())
+        {
+            i_root.GetInfo().m_triangles.swap(i_triangles);
+            return;
+        }
 
         i_triangles.clear();
 

@@ -25,7 +25,7 @@
 
 namespace
 {
-    constexpr float RADIUS = 0.001f;
+    constexpr float RADIUS = 0.01f;
     constexpr int SLICES = 20;
     constexpr int RINGS = 100;
 

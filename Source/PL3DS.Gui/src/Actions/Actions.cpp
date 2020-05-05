@@ -169,8 +169,7 @@ namespace
         {
             Voxelizer voxelizer;
             voxelizer.SetParams(params);
-            auto p_voxelized_mesh = std::make_unique<Mesh>();
-            auto p_voxel_grid = voxelizer.Voxelize(*p_mesh, *p_voxelized_mesh);
+            auto p_voxel_grid = voxelizer.Voxelize(*p_mesh);
 
             if (p_voxel_grid)
             {

@@ -4,12 +4,46 @@
 
 #include <QBrush>
 #include <QColor>
+#include <QSet>
 
 #include <vector>
 
 namespace
 {
     const auto EMPTY_RENDERABLE_NAME = QStringLiteral("Unnamed");
+
+    class NamesUniquenessManager
+    {
+    public:
+        QString GeterateUniqueNameForHint(const QString& i_hint)
+        {
+            if (!n_used_names.contains(i_hint))
+            {
+                n_used_names.insert(i_hint);
+                return i_hint;
+            }
+
+            for (size_t suffix = 1; ; ++suffix)
+            {
+                auto candidate = i_hint + QStringLiteral("_(%1)").arg(QString::number(suffix));
+                if (n_used_names.contains(candidate))
+                    continue;
+
+                n_used_names.insert(candidate);
+                return candidate;
+            }
+        }
+
+        void RemoveName(const QString& i_name) 
+        {
+            Q_ASSERT(n_used_names.contains(i_name));
+            n_used_names.remove(i_name);
+        }
+
+    private:
+        QSet<QString> n_used_names;
+    };
+
 
     struct MetaData
     {
@@ -23,6 +57,7 @@ namespace
 struct RenderablesModel::Impl
 {
     std::vector<MetaData> m_renderables;
+    NamesUniquenessManager m_names_manager;
 };
 
 int RenderablesModel::rowCount(const QModelIndex& i_parent) const
@@ -66,11 +101,11 @@ QVariant RenderablesModel::data(const QModelIndex& i_index, int i_role) const
     return QVariant::Invalid;
 }
 
-void RenderablesModel::AddRenderable(Rendering::IRenderable* ip_renderable, const QString& i_name, bool i_visible)
+void RenderablesModel::AddRenderable(Rendering::IRenderable* ip_renderable, const QString& i_name_hint, bool i_visible)
 {
     MetaData meta;
     meta.mp_renedrable = ip_renderable;
-    meta.m_name = i_name.isEmpty() ? EMPTY_RENDERABLE_NAME : i_name;
+    meta.m_name = mp_impl->m_names_manager.GeterateUniqueNameForHint(i_name_hint.isEmpty() ? EMPTY_RENDERABLE_NAME : i_name_hint);
     meta.m_visible = i_visible;
 
     beginInsertRows({}, rowCount(), rowCount());
@@ -103,7 +138,10 @@ void RenderablesModel::RemoveRenderable(Rendering::IRenderable* ip_renderable)
     if (!pos.has_value())
         return;
 
+    auto name = (mp_impl->m_renderables.begin() + pos.get())->m_name;
+
     beginRemoveRows({}, pos.get(), pos.get());
+    mp_impl->m_names_manager.RemoveName(name);
     mp_impl->m_renderables.erase(mp_impl->m_renderables.begin() + pos.get());
     endRemoveRows();
 }

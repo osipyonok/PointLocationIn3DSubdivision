@@ -15,12 +15,14 @@ public:
     using NodeType = OcTreeNode<Info>;
     using InfoType = Info;
 
-    OcTreeNode(const BoundingBox& i_bbox)
+    OcTreeNode(const BoundingBox& i_bbox, const NodeType* ip_parent = nullptr)
         : m_bbox(i_bbox)
+        , mp_parent(ip_parent)
     {
     }
 
     ~OcTreeNode() = default;
+
 
     const NodeType* GetChild(size_t i_index) const;
     NodeType* GetOrCreateChild(size_t i_index);
@@ -28,10 +30,12 @@ public:
     InfoType& GetInfo();
     const InfoType& GetInfo() const;
 
+    const NodeType* GetParent() const { return mp_parent; }
     BoundingBox GetPotentialChildBBox(size_t i_index) const;
     const BoundingBox& GetBoundingBox() const { return m_bbox; }
 
 private:
+    const NodeType* mp_parent = nullptr;
     BoundingBox m_bbox;
     std::unique_ptr<InfoType> mp_info = std::make_unique<InfoType>();
     std::array<std::unique_ptr<NodeType>, 8> m_children;
@@ -73,7 +77,7 @@ inline typename OcTreeNode<Info>::NodeType* OcTreeNode<Info>::GetOrCreateChild(s
     if (!m_children[i_index])
     {
         auto child_bbox = GetPotentialChildBBox(i_index);
-        m_children[i_index] = std::make_unique<typename OcTreeNode<Info>::NodeType>(child_bbox);
+        m_children[i_index] = std::make_unique<typename OcTreeNode<Info>::NodeType>(child_bbox, this);
     }
 
     return m_children[i_index].get();

@@ -79,7 +79,6 @@ void PointLocalizerVoxelized::Build(const Params& i_params)
     Voxelizer voxelizer;
     voxelizer.SetParams(params);
 
-    Mesh tmp_mesh;
     std::vector<Triangle*> triangles;
     triangles.reserve(mp_impl->m_transformed_triangles.size());
     std::transform(mp_impl->m_transformed_triangles.begin(), mp_impl->m_transformed_triangles.end(), std::back_inserter(triangles), [](auto& i_tr)
@@ -87,7 +86,7 @@ void PointLocalizerVoxelized::Build(const Params& i_params)
         return &i_tr;
     });
 
-    mp_impl->mp_voxelization = voxelizer.Voxelize(triangles, tmp_mesh);
+    mp_impl->mp_voxelization = voxelizer.Voxelize(triangles);
 }
 
 size_t PointLocalizerVoxelized::Localize(const Point3D& i_point, ReturnCode* op_return_code)

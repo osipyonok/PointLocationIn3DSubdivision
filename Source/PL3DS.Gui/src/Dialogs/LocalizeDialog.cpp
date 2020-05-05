@@ -2,6 +2,7 @@
 #include "ui_LocalizeDialog.h"
 
 #include "PL3DS.Gui/RenderablesModel.h"
+#include "PL3DS.Gui/Utilities/GeneralUtilities.h"
 #include "PL3DS.Gui/Utilities/MeshesProxyModel.h"
 #include "PL3DS.Gui/Utilities/ProgressDialog.h"
 
@@ -29,7 +30,6 @@
 #include <QString>
 #include <QStringView>
 
-#include <chrono>
 #include <map>
 
 namespace
@@ -172,7 +172,6 @@ namespace UI
         // octree based stuff
         std::unique_ptr<TrianglesOcTree> mp_octree;
         std::list<Triangle> m_oct_transformed_triangles;
-        std::unordered_map<Triangle*, QStringView> m_oct_triangle_to_mesh_map;
         std::unique_ptr<Rendering::RenderableTrianglesTree> mp_renderable_octree;
     };
 
@@ -218,7 +217,6 @@ namespace UI
             mp_impl->mp_renderable_kd_tree.reset();
 
             mp_impl->mp_octree.reset();
-            mp_impl->m_oct_triangle_to_mesh_map.clear();
             mp_impl->m_oct_transformed_triangles.clear();
             mp_impl->mp_renderable_octree.reset();
         };
@@ -279,28 +277,27 @@ namespace UI
 
             std::vector<size_t> indexes;
             indexes.reserve(meshes.size());
-            double elapsed_time_sec = 0;
-            auto builder = [this, &meshes, &elapsed_time_sec, &indexes]
+            Utilities::TimeMemoryLogger logger;
+            auto builder = [this, &meshes, &logger, &indexes]
             {
                 PointLocalizerVoxelized::Params params;
                 params.m_voxel_size_x = mp_impl->mp_ui->mp_spin_voxel_x->value();
                 params.m_voxel_size_y = mp_impl->mp_ui->mp_spin_voxel_y->value();
                 params.m_voxel_size_z = mp_impl->mp_ui->mp_spin_voxel_z->value();
 
-                auto time_on_start = std::chrono::system_clock::now();
+                logger.Start();
                 for (const auto& mesh : meshes)
                 {
                     auto mesh_id = mp_impl->mp_localizer_voxelized->AddMesh(*mesh.first, mesh.second);
                     indexes.emplace_back(mesh_id);
                 }
                 mp_impl->mp_localizer_voxelized->Build(params);
-                auto time_on_finish = std::chrono::system_clock::now();
-                std::chrono::duration<double> diff = time_on_finish - time_on_start;
-                elapsed_time_sec = diff.count();
+                logger.Stop();
             };
             UI::RunInThread(builder, "Building voxelization");
 
-            _LogMessage(QString("Build of voxelization finished, elapsed time: %1 sec.").arg(QString::number(elapsed_time_sec, 'f')));
+            _LogMessage(QString("Build of voxelization finished, elapsed time: %1 sec.").arg(QString::number(logger.GetElapsedTimeSec(), 'f')));
+            _LogMessage(QString("Memory difference is: %1 mb.").arg(QString::number(logger.GetMemoryDifferenceMb(), 'f')));
 
             mp_impl->m_index_to_name_map.clear();
             for (size_t i = 0; i < meshes.size(); ++i)
@@ -319,18 +316,16 @@ namespace UI
                           mp_impl->mp_ui->mp_spin_y->value(),
                           mp_impl->mp_ui->mp_spin_z->value());
 
-            double elapsed_time_sec = 0;
+            Utilities::TimeMemoryLogger logger;
             PointLocalizerVoxelized::ReturnCode return_code;
             size_t mesh_id;
-            auto localizer = [this, &point, &elapsed_time_sec, &return_code, &mesh_id]
+            auto localizer = [this, &point, &logger, &return_code, &mesh_id]
             {
-                auto time_on_start = std::chrono::system_clock::now();
+                logger.Start();
 
                 mesh_id = mp_impl->mp_localizer_voxelized->Localize(point, &return_code);
 
-                auto time_on_finish = std::chrono::system_clock::now();
-                std::chrono::duration<double> diff = time_on_finish - time_on_start;
-                elapsed_time_sec = diff.count();
+                logger.Stop();
             };
             UI::RunInThread(localizer, "Localizing point");
 
@@ -342,7 +337,7 @@ namespace UI
                 else
                     _LogMessage(QString("Point is located at mesh with name: %1").arg(mp_impl->m_index_to_name_map[mesh_id]));
 
-                _LogMessage(QString("Elapsed time: %1 sec.").arg(QString::number(elapsed_time_sec, 'f')));
+                _LogMessage(QString("Elapsed time: %1 sec.").arg(QString::number(logger.GetElapsedTimeSec(), 'f')));
                 break;
 
             case PointLocalizerVoxelized::ReturnCode::VoxelizationWasNotBuild:
@@ -402,7 +397,7 @@ namespace UI
             mp_impl->m_kd_triangle_to_mesh_map.clear();
             mp_impl->m_kd_transformed_triangles.clear();
 
-            double elapsed_time_sec = 0;
+            Utilities::TimeMemoryLogger logger;
             auto builder = [&]
             {
                 auto meshes = _GetMeshesWithTransformation(mp_impl->mp_ui->mp_list_meshes->model());
@@ -435,16 +430,15 @@ namespace UI
                     }
                 }
 
-                auto time_on_start = std::chrono::system_clock::now();
+                logger.Start();
                 mp_impl->mp_kd_tree->Build(triangles);
-                auto time_on_finish = std::chrono::system_clock::now();
-                std::chrono::duration<double> diff = time_on_finish - time_on_start;
-                elapsed_time_sec = diff.count();
+                logger.Stop();
             };
 
             UI::RunInThread(builder, "Build K-d Tree");
 
-            _LogMessage(QString("Build of k-d tree finished, elapsed time: %1 sec.").arg(QString::number(elapsed_time_sec, 'f')));
+            _LogMessage(QString("Build of k-d tree finished, elapsed time: %1 sec.").arg(QString::number(logger.GetElapsedTimeSec(), 'f')));
+            _LogMessage(QString("Memory difference is: %1 mb.").arg(QString::number(logger.GetMemoryDifferenceMb(), 'f')));
 
             auto p_tree_source = std::make_unique<Rendering::TrianglesTreeDataSource>(*mp_impl->mp_kd_tree);
             mp_impl->mp_renderable_kd_tree = std::make_unique<Rendering::RenderableTrianglesTree>(std::move(p_tree_source));
@@ -466,15 +460,13 @@ namespace UI
                           mp_impl->mp_ui->mp_spin_y->value(),
                           mp_impl->mp_ui->mp_spin_z->value());
 
-            double elapsed_time_sec = 0;
+            Utilities::TimeMemoryLogger logger;
             Triangle* p_triangle = nullptr;
             auto localizer = [&]
             {
-                auto time_on_start = std::chrono::system_clock::now();
+                logger.Start();
                 mp_impl->mp_kd_tree->Query(p_triangle, point);
-                auto time_on_finish = std::chrono::system_clock::now();
-                std::chrono::duration<double> diff = time_on_finish - time_on_start;
-                elapsed_time_sec = diff.count();
+                logger.Stop();
             };
 
             UI::RunInThread(localizer, "Localizing point");
@@ -495,7 +487,7 @@ namespace UI
             {
                 _LogMessage("Point is located outside of all meshes");
             }
-            _LogMessage(QString("Elapsed time: %1 sec.").arg(QString::number(elapsed_time_sec, 'f')));
+            _LogMessage(QString("Elapsed time: %1 sec.").arg(QString::number(logger.GetElapsedTimeSec(), 'f')));
         });
         Q_ASSERT(is_connected);
 
@@ -547,12 +539,12 @@ namespace UI
         {
             mp_impl->mp_octree = std::make_unique<TrianglesOcTree>();
 
-            double elapsed_time_sec = 0;
+            Utilities::TimeMemoryLogger logger;
             auto builder = [&]
             {
                 auto meshes = _GetMeshesWithTransformation(mp_impl->mp_ui->mp_list_meshes->model());
 
-                std::vector<Triangle*> triangles;
+                std::vector<TriangleWithMeshTag> triangles;
                 for (const auto& mesh_transform : meshes)
                 {
                     const auto p_mesh = mesh_transform.first;
@@ -570,8 +562,7 @@ namespace UI
                             transform.ApplyTransformation(point3);
 
                             mp_impl->m_oct_transformed_triangles.emplace_back(point1, point2, point3);
-                            mp_impl->m_oct_triangle_to_mesh_map[&mp_impl->m_oct_transformed_triangles.back()] = QStringView(p_mesh->GetName());
-                            triangles.emplace_back(&mp_impl->m_oct_transformed_triangles.back());
+                            triangles.emplace_back(&mp_impl->m_oct_transformed_triangles.back(), QStringView(p_mesh->GetName()));
                         }
                         else
                         {
@@ -580,16 +571,15 @@ namespace UI
                     }
                 }
 
-                auto time_on_start = std::chrono::system_clock::now();
+                logger.Start();
                 mp_impl->mp_octree->Build(triangles);
-                auto time_on_finish = std::chrono::system_clock::now();
-                std::chrono::duration<double> diff = time_on_finish - time_on_start;
-                elapsed_time_sec = diff.count();
+                logger.Stop();
             };
 
             UI::RunInThread(builder, "Build OcTree");
 
-            _LogMessage(QString("Build of OcTree finished, elapsed time: %1 sec.").arg(QString::number(elapsed_time_sec, 'f')));
+            _LogMessage(QString("Build of OcTree finished, elapsed time: %1 sec.").arg(QString::number(logger.GetElapsedTimeSec(), 'f')));
+            _LogMessage(QString("Memory difference is: %1 mb.").arg(QString::number(logger.GetMemoryDifferenceMb(), 'f')));
 
             auto p_tree_source = std::make_unique<Rendering::TriangleOcTreeDataSource>(*mp_impl->mp_octree);
             mp_impl->mp_renderable_octree = std::make_unique<Rendering::RenderableTrianglesTree>(std::move(p_tree_source));
@@ -648,36 +638,26 @@ namespace UI
                           mp_impl->mp_ui->mp_spin_y->value(),
                           mp_impl->mp_ui->mp_spin_z->value());
 
-            double elapsed_time_sec = 0;
-            Triangle* p_triangle = nullptr;
+            Utilities::TimeMemoryLogger logger;
+            TriangleOcTreeQueryResult query_result;
             auto localizer = [&]
             {
-                auto time_on_start = std::chrono::system_clock::now();
-                mp_impl->mp_octree->Query(p_triangle, point);
-                auto time_on_finish = std::chrono::system_clock::now();
-                std::chrono::duration<double> diff = time_on_finish - time_on_start;
-                elapsed_time_sec = diff.count();
+                logger.Start();
+                mp_impl->mp_octree->Query(query_result, point);
+                logger.Stop();
             };
 
             UI::RunInThread(localizer, "Localizing point");
 
-            bool located_below = false;
-            if (p_triangle)
+            if (query_result.m_status == TriangleOcTreeQueryResult::Inside)
             {
-                auto loc_result = GetPointTriangleRelativeLocation(*p_triangle, point);
-                located_below = loc_result == PointTriangleRelativeLocationResult::Below
-                             || loc_result == PointTriangleRelativeLocationResult::OnSamePlane;
-            }
-
-            if (p_triangle && located_below)
-            {
-                _LogMessage(QString("Point is located at mesh with name: %1").arg(mp_impl->m_oct_triangle_to_mesh_map[p_triangle]));
+                _LogMessage(QString("Point is located at mesh with name: %1").arg(query_result.m_mesh_name));
             }
             else
             {
                 _LogMessage("Point is located outside of all meshes");
             }
-            _LogMessage(QString("Elapsed time: %1 sec.").arg(QString::number(elapsed_time_sec, 'f')));
+            _LogMessage(QString("Elapsed time: %1 sec.").arg(QString::number(logger.GetElapsedTimeSec(), 'f')));
         });
         Q_ASSERT(is_connected);
 

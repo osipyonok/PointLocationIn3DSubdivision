@@ -106,9 +106,10 @@ namespace
 
 void _AddCoordinateSystemMeshes()
 {
-    static Rendering::RenderableSegment axis_x({ 0, 0, 0 }, { 1, 0, 0 });
-    static Rendering::RenderableSegment axis_y({ 0, 0, 0 }, { 0, 1, 0 });
-    static Rendering::RenderableSegment axis_z({ 0, 0, 0 }, { 0, 0, 1 });
+    static constexpr double inf = 200'000;
+    static Rendering::RenderableSegment axis_x({ -inf, 0, 0 }, { inf, 0, 0 });
+    static Rendering::RenderableSegment axis_y({ 0, -inf, 0 }, { 0, inf, 0 });
+    static Rendering::RenderableSegment axis_z({ 0, 0, -inf }, { 0, 0, inf });
 
     axis_x.SetColor(QColor("red"));
     axis_y.SetColor(QColor("green"));

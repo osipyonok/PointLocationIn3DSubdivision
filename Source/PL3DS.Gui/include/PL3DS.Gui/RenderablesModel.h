@@ -29,7 +29,7 @@ public:
     int rowCount(const QModelIndex& i_parent = QModelIndex()) const override;
     QVariant data(const QModelIndex& i_index, int i_role = Qt::DisplayRole) const override;
 
-    void AddRenderable(Rendering::IRenderable* ip_renderable, const QString& i_name, bool i_visible = true);
+    void AddRenderable(Rendering::IRenderable* ip_renderable, const QString& i_name_hint, bool i_visible = true);
     void RemoveRenderable(Rendering::IRenderable* ip_renderable);
     void SetRenderableVisible(Rendering::IRenderable* ip_renderable, bool i_visible);
 

@@ -16,7 +16,7 @@ void Voxelizer::SetParams(const Params& i_params)
     m_params = i_params;
 }
 
-std::unique_ptr<VoxelGrid> Voxelizer::Voxelize(const std::vector<Triangle*>& i_triangles, Mesh& o_mesh)
+std::unique_ptr<VoxelGrid> Voxelizer::Voxelize(const std::vector<Triangle*>& i_triangles)
 {
     BoundingBox bbox;
     for (const auto& p_triangle : i_triangles)
@@ -37,51 +37,6 @@ std::unique_ptr<VoxelGrid> Voxelizer::Voxelize(const std::vector<Triangle*>& i_t
     std::vector<std::vector<std::vector<bool>>> is_present(cnt_x, std::vector<std::vector<bool>>(cnt_y, std::vector<bool>(cnt_z, false)));
 
     const Point3D step(m_params.m_resolution_x, m_params.m_resolution_y, m_params.m_resolution_z);
-
-    auto add_cube_if_not_exists = [&, this](int i_x, int i_y, int i_z)
-    {
-        if (is_present[i_x][i_y][i_z])
-            return;
-        is_present[i_x][i_y][i_z] = true;
-
-        Point3D vertices[8] = 
-        {
-            *o_mesh.AddPoint(bbox.GetMin()[0] + i_x * step[0], bbox.GetMin()[1] + i_y * step[1], bbox.GetMin()[2] + i_z * step[2]),
-            *o_mesh.AddPoint(bbox.GetMin()[0] + i_x * step[0], bbox.GetMin()[1] + (i_y + 1) * step[1], bbox.GetMin()[2] + i_z * step[2]),
-            *o_mesh.AddPoint(bbox.GetMin()[0] + (i_x + 1) * step[0], bbox.GetMin()[1] + i_y * step[1], bbox.GetMin()[2] + i_z * step[2]),
-            *o_mesh.AddPoint(bbox.GetMin()[0] + (i_x + 1) * step[0], bbox.GetMin()[1] + (i_y + 1) * step[1], bbox.GetMin()[2] + i_z * step[2]),
-            *o_mesh.AddPoint(bbox.GetMin()[0] + i_x * step[0], bbox.GetMin()[1] + i_y * step[1], bbox.GetMin()[2] + (i_z + 1) * step[2]),
-            *o_mesh.AddPoint(bbox.GetMin()[0] + i_x * step[0], bbox.GetMin()[1] + (i_y + 1) * step[1], bbox.GetMin()[2] + (i_z + 1) * step[2]),
-            *o_mesh.AddPoint(bbox.GetMin()[0] + (i_x + 1) * step[0], bbox.GetMin()[1] + i_y * step[1], bbox.GetMin()[2] + (i_z + 1) * step[2]),
-            *o_mesh.AddPoint(bbox.GetMin()[0] + (i_x + 1) * step[0], bbox.GetMin()[1] + (i_y + 1) * step[1], bbox.GetMin()[2] + (i_z + 1) * step[2]),
-        };
-
-        static std::vector<std::vector<int>> faces = 
-        {
-            { 3, 7, 2 },
-            { 6, 2, 7},
-            { 2, 6, 0},
-            { 4, 0, 6},
-            {0, 4, 1},
-            {5, 1, 4},
-            {1, 5, 3},
-            {7, 3, 5},
-            {3, 2, 0},
-            {0, 1, 3},
-            {7, 4, 6},
-            {4, 7, 5}
-        };
-        
-        for (auto& face : faces)
-        {
-            Triangle tr(vertices[face[0]], vertices[face[1]], vertices[face[2]]);
-            if (auto p_triangle = o_mesh.GetTriangle(tr).lock())
-                continue;
-
-            o_mesh.AddTriangle(vertices[face[0]], vertices[face[1]], vertices[face[2]]);
-        }
-
-    };
 
     for (const auto& p_triangle : i_triangles)
     {
@@ -135,7 +90,6 @@ std::unique_ptr<VoxelGrid> Voxelizer::Voxelize(const std::vector<Triangle*>& i_t
                     ExtrudeInplace(voxel, m_params.m_precision);
                     if (TriangleWithBBoxIntersection(*p_triangle, voxel))
                     {
-                        add_cube_if_not_exists(x, y, z);
                         auto p_voxel = p_voxel_grid->GetOrCreateVoxel(std::array<size_t, 3>{ x, y, z });
                         p_voxel->AddTriangle(p_triangle);
                     }
@@ -147,7 +101,7 @@ std::unique_ptr<VoxelGrid> Voxelizer::Voxelize(const std::vector<Triangle*>& i_t
     return std::move(p_voxel_grid);
 }
 
-std::unique_ptr<VoxelGrid> Voxelizer::Voxelize(const Mesh& i_mesh, Mesh& o_mesh)
+std::unique_ptr<VoxelGrid> Voxelizer::Voxelize(const Mesh& i_mesh)
 {
     std::vector<Triangle*> triangles;
     const auto triangles_count = i_mesh.GetTrianglesCount();
@@ -164,5 +118,5 @@ std::unique_ptr<VoxelGrid> Voxelizer::Voxelize(const Mesh& i_mesh, Mesh& o_mesh)
         }
     }
 
-    return Voxelize(triangles, o_mesh);
+    return Voxelize(triangles);
 }
