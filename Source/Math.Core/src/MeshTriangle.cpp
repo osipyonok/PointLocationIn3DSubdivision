@@ -52,48 +52,50 @@ void MeshTriangle::SetNeighbour(TriangleHandle i_neighbour, short i_index)
     Q_ASSERT(i_index >= 0 && i_index < 3);
     Q_ASSERT(_IsNeighbourAt(*this, *i_neighbour.lock(), i_index));
 
-    m_neighbours[i_index] = i_neighbour;
+    m_neighbours[i_index].push_back(i_neighbour);
 }
 
-TriangleHandle MeshTriangle::GetNeighbour(short i_index) const
+const std::list<TriangleHandle>& MeshTriangle::GetNeighbours(short i_index) const
 {
     Q_ASSERT(i_index >= 0 && i_index < 3);
 
     return m_neighbours[i_index];
 }
 
-void MeshTriangle::RemoveNeighbour(short i_index)
+void MeshTriangle::RemoveAllNeighbours(short i_index)
 {
     Q_ASSERT(i_index >= 0 && i_index < 3);
 
-    m_neighbours[i_index].reset();
+    m_neighbours[i_index].clear();
 }
 
 void MeshTriangle::RemoveNeighbour(const Triangle& i_neighbour)
 {
-    if (auto p_triangle = m_neighbours[0].lock())
+    auto predicate = [&](const TriangleHandle& i_handle)
     {
-        if (*p_triangle == i_neighbour)
+        if (auto p_triangle = i_handle.lock())
         {
-            RemoveNeighbour(0);
+            return *p_triangle == i_neighbour;
         }
-    }
+        else
+        {
+            Q_ASSERT(false);
+            return false;
+        }
+    };
 
-    if (auto p_triangle = m_neighbours[1].lock())
-    {
-        if (*p_triangle == i_neighbour)
-        {
-            RemoveNeighbour(1);
-        }
-    }
+    auto it0 = std::find_if(m_neighbours[0].begin(), m_neighbours[0].end(), predicate);
+    auto it1 = std::find_if(m_neighbours[1].begin(), m_neighbours[1].end(), predicate);
+    auto it2 = std::find_if(m_neighbours[2].begin(), m_neighbours[2].end(), predicate);
 
-    if (auto p_triangle = m_neighbours[2].lock())
-    {
-        if (*p_triangle == i_neighbour)
-        {
-            RemoveNeighbour(2);
-        }
-    }
+    if (it0 != m_neighbours[0].end())
+        m_neighbours[0].erase(it0);
+
+    if (it1 != m_neighbours[1].end())
+        m_neighbours[1].erase(it1);
+
+    if (it2 != m_neighbours[2].end())
+        m_neighbours[2].erase(it2);
 }
 
 void MeshTriangle::SetPoint(short i_index, const Point3D& i_new_point)

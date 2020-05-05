@@ -5,6 +5,7 @@
 #include <Math.Core/Triangle.h>
 
 #include <array>
+#include <list>
 #include <memory>
 
 #include <boost/optional.hpp>
@@ -39,14 +40,14 @@ public:
     void SetNeighbour(TriangleHandle i_neighbour);
     void SetNeighbour(TriangleHandle i_neighbour, short i_index);
 
-    TriangleHandle GetNeighbour(short i_index) const;
+    const std::list<TriangleHandle>& GetNeighbours(short i_index) const;
 
-    void RemoveNeighbour(short i_index);
+    void RemoveAllNeighbours(short i_index);
     void RemoveNeighbour(const Triangle& i_neighbour);
 
     // Do NOT use this method dirctly, it can't update referenced mesh points. Should be called though mesh
     void SetPoint(short i_index, const Point3D& i_new_point) override;
 
 private:
-    std::array<TriangleHandle, 3> m_neighbours;
+    std::array<std::list<TriangleHandle>, 3> m_neighbours;
 };

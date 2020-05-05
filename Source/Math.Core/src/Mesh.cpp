@@ -200,17 +200,28 @@ namespace
         auto it = m_data.get<TriangleTag>().find(i_triangle);
         if (it != m_data.get<TriangleTag>().end())
         {
-            if (auto neighbour = (**it).GetNeighbour(0).lock())
+            for (auto neighbour_hangle : (**it).GetNeighbours(0))
             {
-                neighbour->RemoveNeighbour(i_triangle);
+                if (auto p_neighbour = neighbour_hangle.lock())
+                {
+                    p_neighbour->RemoveNeighbour(i_triangle);
+                }
             }
-            if (auto neighbour = (**it).GetNeighbour(1).lock())
+
+            for (auto neighbour_hangle : (**it).GetNeighbours(1))
             {
-                neighbour->RemoveNeighbour(i_triangle);
+                if (auto p_neighbour = neighbour_hangle.lock())
+                {
+                    p_neighbour->RemoveNeighbour(i_triangle);
+                }
             }
-            if (auto neighbour = (**it).GetNeighbour(2).lock())
+
+            for (auto neighbour_hangle : (**it).GetNeighbours(2))
             {
-                neighbour->RemoveNeighbour(i_triangle);
+                if (auto p_neighbour = neighbour_hangle.lock())
+                {
+                    p_neighbour->RemoveNeighbour(i_triangle);
+                }
             }
 
             m_data.get<TriangleTag>().erase(it);
