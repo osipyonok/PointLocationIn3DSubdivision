@@ -135,10 +135,13 @@ namespace UI
         mp_impl->mp_compositor->setSize(size());
 
         mp_impl->mp_camera = new Qt3DRender::QCamera(rootEntity);
-        mp_impl->mp_camera->setPosition(QVector3D(1.f, 1.f, 1.f));
+        mp_impl->mp_camera->setPosition({ -4.f, 4.f, 4.f });
         mp_impl->mp_camera->setViewCenter(QVector3D(0, 0, 0));
+        mp_impl->mp_camera->rotateAboutViewCenter(QQuaternion::fromAxisAndAngle({ -1.f, 1.f, 1.f }, 240.f));
+        mp_impl->mp_camera->rotateAboutViewCenter(QQuaternion::fromAxisAndAngle({ 0.f, 0.f, 1.f }, 120.f));
         auto aspect = (this->width() + 0.0f) / this->height();
         mp_impl->mp_camera->lens()->setPerspectiveProjection(60.0f, aspect, 0.01f, 1500.0f);
+
 
         mp_impl->mp_camera_controller = new Klein::TrackballCameraController(rootEntity);
         mp_impl->mp_camera_controller->setCamera(mp_impl->mp_camera);
