@@ -1,10 +1,13 @@
 #include "Rendering.Core/RenderableVoxelGrid.h"
 
-#include "Rendering.Core/RenderableBox.h"
+#include "Rendering.Core/RenderableMesh.h"
 
+#include <Math.Core/Mesh.h>
 #include <Math.Core/TransformMatrix.h>
 
 #include <Math.DataStructures/VoxelGrid.h>
+
+#include <Math.Algos/VoxelGrid2MeshConverter.h>
 
 #include <QColor>
 
@@ -16,47 +19,54 @@ namespace Rendering
 {
     struct RenderableVoxelGrid::Impl
     {
-        std::vector<RenderableBox*> mp_nested_renderables;
+        std::unique_ptr<Mesh> mp_mesh;
+        std::unique_ptr<RenderableMesh> mp_renderable_mesh;
+
         RenderingStyle m_style = RenderingStyle::Transparent;
     };
 
     RenderableVoxelGrid::RenderableVoxelGrid(const VoxelGrid& i_grid)
         : mp_impl(std::make_unique<Impl>())
     {
-        auto voxels = i_grid.GetExistingVoxels();
-        mp_impl->mp_nested_renderables.reserve(voxels.size());
-        for (const auto p_voxel : voxels)
-        {
-            auto p_voxel_renderable = std::make_unique<RenderableBox>(*p_voxel);
-            p_voxel_renderable->setParent(this);
-            p_voxel_renderable->SetRenderingStyle(RenderableBox::RenderingStyle::Transparent);
-            mp_impl->mp_nested_renderables.emplace_back(p_voxel_renderable.release());
-        }
+        mp_impl->mp_mesh = std::make_unique<Mesh>();
+        VoxelGrid2MeshConverter::Convert(i_grid, *mp_impl->mp_mesh);
+
+        mp_impl->mp_renderable_mesh = std::make_unique<RenderableMesh>(*mp_impl->mp_mesh);
+        mp_impl->mp_renderable_mesh->SetColor(QColor(192, 192, 192)); // grey #C0C0C0
+        mp_impl->mp_renderable_mesh->SetRenderingStyle(RenderableMesh::RenderingStyle::Transparent);
+
+        bool is_connected = false;
+        is_connected = connect(mp_impl->mp_renderable_mesh.get(), &IRenderable::RenderableMaterialChanged, this, &IRenderable::RenderableMaterialChanged);
+        Q_ASSERT(is_connected);
+        is_connected = connect(mp_impl->mp_renderable_mesh.get(), &IRenderable::RenderableTransformationChanged, this, &IRenderable::RenderableTransformationChanged);
+        Q_ASSERT(is_connected);
+        is_connected = connect(mp_impl->mp_renderable_mesh.get(), &IRenderable::RenderableRendererChanged, this, &IRenderable::RenderableRendererChanged);
+        Q_ASSERT(is_connected);
+        is_connected = connect(mp_impl->mp_renderable_mesh.get(), &IRenderable::RenderableDestructed, this, &IRenderable::RenderableDestructed);
+        Q_ASSERT(is_connected);
+        Q_UNUSED(is_connected);
     }
 
-    RenderableVoxelGrid::~RenderableVoxelGrid()
-    {
-        _OnDestructed();
-    }
+    RenderableVoxelGrid::~RenderableVoxelGrid() = default;
 
     std::unique_ptr<Qt3DCore::QComponent> RenderableVoxelGrid::GetMaterial() const
     {
-        return nullptr;
+        return mp_impl->mp_renderable_mesh->GetMaterial();
     }
 
     std::unique_ptr<Qt3DCore::QTransform> RenderableVoxelGrid::GetTransformation() const
     {
-        return nullptr;
+        return mp_impl->mp_renderable_mesh->GetTransformation();
     }
 
     std::unique_ptr<Qt3DCore::QComponent> RenderableVoxelGrid::GetRenderer() const
     {
-        return nullptr;
+        return mp_impl->mp_renderable_mesh->GetRenderer();
     }
 
     QColor RenderableVoxelGrid::GetColor() const
     {
-        return mp_impl->mp_nested_renderables.empty() ? QColor{} : mp_impl->mp_nested_renderables.at(0)->GetColor();
+        return mp_impl->mp_renderable_mesh->GetColor();
     }
 
     RenderableVoxelGrid::RenderingStyle RenderableVoxelGrid::GetRenderingStyle() const
@@ -66,47 +76,34 @@ namespace Rendering
 
     const TransformMatrix& RenderableVoxelGrid::GetTransform() const
     {
-        return mp_impl->mp_nested_renderables.empty() ? TransformMatrix{} : mp_impl->mp_nested_renderables.at(0)->GetTransform();
+        return mp_impl->mp_renderable_mesh->GetTransform();
     }
 
     void RenderableVoxelGrid::SetColor(const QColor& i_color)
     {
-        if (i_color == GetColor())
-            return;
-
-        for (auto p_renderable : mp_impl->mp_nested_renderables)
-            p_renderable->SetColor(i_color);
-
-        emit RenderableMaterialChanged();
+        mp_impl->mp_renderable_mesh->SetColor(i_color);
     }
 
     void RenderableVoxelGrid::SetRenderingStyle(RenderingStyle i_style)
     {
-        if (i_style == mp_impl->m_style)
-            return;
-
         mp_impl->m_style = i_style;
-        auto new_style = i_style == RenderingStyle::Opaque ? RenderableBox::RenderingStyle::Opaque : RenderableBox::RenderingStyle::Transparent;
-        for (auto p_renderable : mp_impl->mp_nested_renderables)
-            p_renderable->SetRenderingStyle(new_style);
 
-        emit RenderableMaterialChanged();
+        switch (i_style)
+        {
+        case RenderingStyle::Opaque:
+            mp_impl->mp_renderable_mesh->SetRenderingStyle(RenderableMesh::RenderingStyle::Opaque);
+            break;
+        case RenderingStyle::Transparent:
+            mp_impl->mp_renderable_mesh->SetRenderingStyle(RenderableMesh::RenderingStyle::Transparent);
+            break;
+        default:
+            Q_ASSERT(false);
+        }
     }
 
     void RenderableVoxelGrid::Transform(const TransformMatrix& i_transform)
     {
-        if (i_transform == TransformMatrix{})
-            return;
-
-        for (auto p_renderable : mp_impl->mp_nested_renderables)
-            p_renderable->Transform(i_transform);
-
-        emit RenderableTransformationChanged();
-    }
-
-    std::vector<IRenderable*> RenderableVoxelGrid::GetNestedRenderables() const
-    {
-        return std::vector<IRenderable*>(mp_impl->mp_nested_renderables.begin(), mp_impl->mp_nested_renderables.end());
+        mp_impl->mp_renderable_mesh->Transform(i_transform);
     }
 
 }

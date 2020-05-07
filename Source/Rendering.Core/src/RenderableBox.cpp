@@ -91,6 +91,8 @@ namespace Rendering
         Q_ASSERT(is_connected);
         is_connected = connect(mp_impl->mp_box_renderable_mesh.get(), &IRenderable::RenderableRendererChanged, this, &IRenderable::RenderableRendererChanged);
         Q_ASSERT(is_connected);
+        is_connected = connect(mp_impl->mp_box_renderable_mesh.get(), &IRenderable::RenderableDestructed, this, &IRenderable::RenderableDestructed);
+        Q_ASSERT(is_connected);
         Q_UNUSED(is_connected);
     }
 

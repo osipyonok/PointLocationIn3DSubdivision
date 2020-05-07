@@ -34,8 +34,6 @@ namespace Rendering
         void SetRenderingStyle(RenderingStyle i_style);
         void Transform(const TransformMatrix& i_transform) override;
 
-        std::vector<IRenderable*> GetNestedRenderables() const override;
-
     private:
         struct Impl;
         std::unique_ptr<Impl> mp_impl;
