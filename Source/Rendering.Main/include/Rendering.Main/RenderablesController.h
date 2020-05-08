@@ -8,6 +8,8 @@
 
 #include <list>
 
+class BoundingBox;
+
 namespace Rendering
 {
     class IRenderable;
@@ -24,6 +26,8 @@ namespace Rendering
 
         std::list<IRenderable*> GetRenderables();
 
+        BoundingBox GetFitInBoundingBox() const;
+
     Q_SIGNALS:
         void RenderableAdded(const Rendering::IRenderable*);
         void RenderableRemoved(const Rendering::IRenderable*);
@@ -39,6 +43,5 @@ namespace Rendering
         RenderablesController();
 
         QMap<IRenderable*, QVector<QMetaObject::Connection>> m_renderables;
-        //QSet<IRenderable*> m_renderables;
     };
 }

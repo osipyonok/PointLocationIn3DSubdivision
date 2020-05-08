@@ -2,12 +2,15 @@
 
 #include <Rendering.Core/API.h>
 
+#include <Math.Core/BoundingBox.h>
+
 #include <QObject>
 
 #include <memory>
 #include <vector>
 
 class QColor;
+
 class TransformMatrix;
 
 namespace Qt3DCore
@@ -39,6 +42,7 @@ namespace Rendering
         virtual const TransformMatrix& GetTransform() const = 0;
 
         virtual std::vector<IRenderable*> GetNestedRenderables() const { return {}; }
+        virtual BoundingBox GetBoundingBoxToFitInView() const { return {}; };
 
 
     Q_SIGNALS:

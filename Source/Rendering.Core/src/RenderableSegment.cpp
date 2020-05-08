@@ -31,7 +31,7 @@ namespace
 
     Vector3D _GetOrthogonalVector(const Vector3D& i_vector)
     {
-        size_t non_zero_coord = 0;
+        short non_zero_coord = 0;
         if (qFuzzyIsNull(i_vector.Get(non_zero_coord)))
             non_zero_coord = 1;
         if (qFuzzyIsNull(i_vector.Get(non_zero_coord)))

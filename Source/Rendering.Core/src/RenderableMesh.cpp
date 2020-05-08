@@ -149,6 +149,19 @@ namespace Rendering
         return std::move(renderables);
     }
 
+    BoundingBox RenderableMesh::GetBoundingBoxToFitInView() const
+    {
+        auto bbox = mp_mesh->GetBoundingBox();
+        BoundingBox transformed_bbox;
+        auto min = bbox.GetMin();
+        auto max = bbox.GetMax();
+        m_transform.ApplyTransformation(min);
+        m_transform.ApplyTransformation(max);
+        transformed_bbox.AddPoint(min);
+        transformed_bbox.AddPoint(max);
+        return transformed_bbox;
+    }
+
     void RenderableMesh::SetDrawBoundingBoxContours(bool i_draw)
     {
         if (i_draw == m_draw_bbox_contours)

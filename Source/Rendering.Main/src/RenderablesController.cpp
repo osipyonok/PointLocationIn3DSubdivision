@@ -1,5 +1,7 @@
 #include "Rendering.Main/RenderablesController.h"
 
+#include <Math.Core/Point3D.h>
+
 #include <Rendering.Core/IRenderable.h>
 
 
@@ -22,7 +24,6 @@ namespace Rendering
 
         QVector<QMetaObject::Connection>& connections = m_renderables[&i_renderable];
 
-        //todo disconnect on remove
         QMetaObject::Connection connection;
         connection = connect(&i_renderable, &IRenderable::RenderableMaterialChanged, this, [this, p_renderable = &i_renderable]
         {
@@ -87,5 +88,22 @@ namespace Rendering
         list.resize(m_renderables.size());
         std::copy(m_renderables.keyBegin(), m_renderables.keyEnd(), list.begin());
         return std::move(list);
+    }
+
+    BoundingBox RenderablesController::GetFitInBoundingBox() const
+    {
+        BoundingBox bbox;
+
+        for (const auto p_renderable : m_renderables.keys())
+        {
+            auto renderable_bbox = p_renderable->GetBoundingBoxToFitInView();
+            if (!renderable_bbox.IsValid())
+                continue;
+
+            bbox.AddPoint(renderable_bbox.GetMin());
+            bbox.AddPoint(renderable_bbox.GetMax());
+        }
+
+        return bbox;
     }
 }

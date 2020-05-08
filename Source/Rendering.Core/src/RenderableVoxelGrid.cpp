@@ -106,4 +106,9 @@ namespace Rendering
         mp_impl->mp_renderable_mesh->Transform(i_transform);
     }
 
+    BoundingBox RenderableVoxelGrid::GetBoundingBoxToFitInView() const
+    {
+        return mp_impl->mp_renderable_mesh->GetBoundingBoxToFitInView();
+    }
+
 }

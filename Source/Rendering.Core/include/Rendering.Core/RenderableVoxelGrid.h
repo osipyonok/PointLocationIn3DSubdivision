@@ -34,6 +34,8 @@ namespace Rendering
         void SetRenderingStyle(RenderingStyle i_style);
         void Transform(const TransformMatrix& i_transform) override;
 
+        BoundingBox GetBoundingBoxToFitInView() const override;
+
     private:
         struct Impl;
         std::unique_ptr<Impl> mp_impl;

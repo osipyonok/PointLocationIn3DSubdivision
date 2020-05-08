@@ -1,6 +1,11 @@
 #include "PL3DS.Gui/MainWindow3D.h"
 
 #include <Rendering.Core/IRenderable.h>
+#include <Rendering.Core/RenderableBox.h>
+#include <Rendering.Core/RenderableMesh.h>
+#include <Rendering.Core/RenderablePoint.h>
+#include <Rendering.Core/RenderableTrianglesTree.h>
+#include <Rendering.Core/RenderableVoxelGrid.h>
 
 #include <Rendering.Main/RenderablesController.h>
 
@@ -35,10 +40,14 @@
 
 #include <QCoreApplication>
 #include <QString>
+
 #include <unordered_map>
+
 
 namespace
 {
+    constexpr float EXTRUDE_FACTOR = 1.05f;
+
     struct RenderableData
     {
         QPointer<Qt3DCore::QComponent> mp_material;
@@ -95,8 +104,22 @@ namespace UI
 
     void MainWindow3D::ViewAll()
     {
-        if (mp_impl->mp_camera)
-            mp_impl->mp_camera->viewAll();
+        if (!mp_impl->mp_camera)
+            return;
+
+        auto bbox = Rendering::RenderablesController::GetInstance().GetFitInBoundingBox();
+        if (!bbox.IsValid())
+        {
+            return;
+        }
+
+        auto center = (bbox.GetMin() + bbox.GetMax()) / 2;
+        auto diameter = std::max(bbox.GetDeltaX(), std::max(bbox.GetDeltaY(), bbox.GetDeltaZ()));
+
+        mp_impl->mp_camera->viewSphere({ static_cast<float>(center.GetX()),
+                                         static_cast<float>(center.GetY()),
+                                         static_cast<float>(center.GetZ()) },
+                                       static_cast<float>(diameter) / 2.f * EXTRUDE_FACTOR);
     }
 
     void MainWindow3D::ViewRenderable(const Rendering::IRenderable* ip_renderable)

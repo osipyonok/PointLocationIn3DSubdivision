@@ -152,4 +152,9 @@ namespace Rendering
     {
         mp_impl->mp_box_renderable_mesh->Transform(i_transform);
     }
+
+    BoundingBox RenderableBox::GetBoundingBoxToFitInView() const
+    {
+        return mp_impl->mp_box_renderable_mesh->GetBoundingBoxToFitInView();
+    }
 }

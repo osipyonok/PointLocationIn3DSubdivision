@@ -44,6 +44,8 @@ namespace Rendering
 
         std::vector<IRenderable*> GetNestedRenderables() const override;
 
+        BoundingBox GetBoundingBoxToFitInView() const override;
+
 	private:
 		QPointer<Mesh> mp_mesh;
 
