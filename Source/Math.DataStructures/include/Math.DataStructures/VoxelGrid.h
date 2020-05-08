@@ -23,9 +23,9 @@ public:
     const std::array<size_t, 3>& GetCoordinates() const;
 
 private:
-    std::array<size_t, 3> m_coordinates;
 #pragma warning(push)
 #pragma warning(disable: 4251)
+    std::array<size_t, 3> m_coordinates;
     std::vector<Triangle*> m_triangles;
 #pragma warning(pop)
 };
@@ -48,10 +48,10 @@ public:
 
 private:
     BoundingBox m_bbox;
-    std::array<double, 3> m_voxel_size;
-    std::array<size_t, 3> m_num_voxels;
 #pragma warning(push)
 #pragma warning(disable: 4251)
+    std::array<double, 3> m_voxel_size;
+    std::array<size_t, 3> m_num_voxels;
     std::unordered_map<size_t, Voxel> m_voxels;
 #pragma warning(pop)
 };

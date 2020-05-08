@@ -87,15 +87,15 @@ namespace
         Vector3D min, max;
         for (size_t i = 0; i < 3; ++i)
         {
-            if (i_normal.Get(i) > 0)
+            if (i_normal.Get(static_cast<short>(i)) > 0)
             {
-                min.Set(-i_box_halfdelta.Get(i) - i_point.Get(i), static_cast<short>(i));
-                max.Set(i_box_halfdelta.Get(i) - i_point.Get(i), static_cast<short>(i));
+                min.Set(-i_box_halfdelta.Get(static_cast<short>(i)) - i_point.Get(static_cast<short>(i)), static_cast<short>(i));
+                max.Set( i_box_halfdelta.Get(static_cast<short>(i)) - i_point.Get(static_cast<short>(i)), static_cast<short>(i));
             }
             else
             {
-                min.Set(i_box_halfdelta.Get(i) - i_point.Get(i), static_cast<short>(i));
-                max.Set(-i_box_halfdelta.Get(i) - i_point.Get(i), static_cast<short>(i));
+                min.Set( i_box_halfdelta.Get(static_cast<short>(i)) - i_point.Get(static_cast<short>(i)), static_cast<short>(i));
+                max.Set(-i_box_halfdelta.Get(static_cast<short>(i)) - i_point.Get(static_cast<short>(i)), static_cast<short>(i));
             }
         }
 

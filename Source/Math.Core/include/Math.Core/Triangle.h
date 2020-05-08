@@ -43,7 +43,10 @@ private:
     void _InvalidateHash();
 
 private:
+#pragma warning(push)
+#pragma warning(disable: 4251)
     mutable boost::optional<size_t> m_hash_cache;
 
 	std::array<Point3D, 3> m_points;
+#pragma warning(pop)
 };
