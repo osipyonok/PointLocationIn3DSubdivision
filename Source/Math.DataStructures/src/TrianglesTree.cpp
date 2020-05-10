@@ -1,5 +1,87 @@
 #include "Math.DataStructures/TrianglesTree.h"
 
+
+#include <functional>
+#include <numeric>
+
+
+namespace
+{
+    Triangle* _QuickMedian(const std::vector<Triangle*>& i_triangles, std::function<double(Triangle*)> i_value_getter)
+    {
+        if (i_triangles.empty())
+        {
+            Q_ASSERT(false);
+            return nullptr;
+        }
+
+        std::vector<std::pair<Triangle*, double>> triangles_with_values;
+        triangles_with_values.reserve(i_triangles.size());
+
+        std::transform(i_triangles.begin(), i_triangles.end(), std::back_inserter(triangles_with_values), [i_value_getter](auto ip_triangle)
+        {
+            return std::make_pair(ip_triangle, i_value_getter(ip_triangle));
+        });
+
+        std::function<size_t(const std::vector<size_t>&, size_t)> quick_median_impl = [&](const std::vector<size_t>& i_indexes, size_t i_k) -> size_t
+        {
+            if (i_indexes.empty())
+            {
+                Q_ASSERT(false);
+                return std::numeric_limits<size_t>::max();
+            }
+
+            if (i_indexes.size() == 1)
+            {
+                return i_indexes.front();
+            }
+
+            const double pivot_value = triangles_with_values[i_indexes[0]].second;
+            std::vector<size_t> less;
+            std::copy_if(i_indexes.begin() + 1, i_indexes.end(), std::back_inserter(less), [&](size_t i_index)
+            {
+                return triangles_with_values[i_index].second < pivot_value;
+            });
+
+            if (less.size() >= i_k)
+            {
+                return quick_median_impl(less, i_k);
+            }
+
+            std::vector<size_t> same;
+            same.push_back(i_indexes.front());
+            std::copy_if(i_indexes.begin() + 1, i_indexes.end(), std::back_inserter(same), [&](size_t i_index)
+            {
+                return triangles_with_values[i_index].second == pivot_value;
+            });
+
+            if (less.size() + same.size() >= i_k)
+            {
+                return i_indexes.front();
+            }
+
+            std::vector<size_t> greater;
+            std::copy_if(i_indexes.begin() + 1, i_indexes.end(), std::back_inserter(greater), [&](size_t i_index)
+            {
+                return triangles_with_values[i_index].second > pivot_value;
+            });
+
+            auto new_k = i_k - less.size() - same.size();
+            less.clear();// clean-up memory
+            same.clear();
+
+            return quick_median_impl(greater, new_k);
+        };
+
+        std::vector<size_t> indexes;
+        indexes.resize(i_triangles.size());
+        std::iota(indexes.begin(), indexes.end(), 0);
+
+        auto median_index = quick_median_impl(indexes, i_triangles.size() / 2);
+        return triangles_with_values[median_index].first;
+    }
+}
+
 void NearestTriangleApproximationFunctor::operator()(TrianglesTreeNode& i_root, Triangle*& io_triangle, const Point3D& i_point)
 {
     if (!i_root.GetInfo().m_bbox.ContainsPoint(i_point))
@@ -63,15 +145,10 @@ void BuildTrianglesTreeFunctor::operator()(TrianglesTreeNode& i_root, std::vecto
     }
     Q_ASSERT(longest_dim != -1);
 
-    // can be done faster by using O(n) median finding algo
-    std::sort(i_triangles.begin(), i_triangles.end(), [longest_dim](Triangle* ip_tr1, Triangle* ip_tr2)
+    auto p_median_triangle = _QuickMedian(i_triangles, [longest_dim](Triangle* ip_triangle)
     {
-        auto first = ip_tr1->GetPoint(0).Get(longest_dim) + ip_tr1->GetPoint(1).Get(longest_dim) + ip_tr1->GetPoint(2).Get(longest_dim);
-        auto second = ip_tr2->GetPoint(0).Get(longest_dim) + ip_tr2->GetPoint(1).Get(longest_dim) + ip_tr2->GetPoint(2).Get(longest_dim);
-        return first < second;
+        return ip_triangle->GetPoint(0).Get(longest_dim) + ip_triangle->GetPoint(1).Get(longest_dim) + ip_triangle->GetPoint(2).Get(longest_dim);
     });
-
-    auto p_median_triangle = i_triangles[i_triangles.size() / 2];
     auto center = (p_median_triangle->GetPoint(0) + p_median_triangle->GetPoint(1) + p_median_triangle->GetPoint(2)) / 3;
     auto koef = (center[longest_dim] - root_bbox.GetMin().Get(longest_dim)) / root_bbox.GetDelta(longest_dim);
 
@@ -98,12 +175,12 @@ void BuildTrianglesTreeFunctor::operator()(TrianglesTreeNode& i_root, std::vecto
 
     if (left_triangles.empty())
     {
-        i_root.GetInfo().m_triangles.swap(left_triangles);
+        i_root.GetInfo().m_triangles.swap(i_triangles);
         return;
     }
     if (right_triangles.empty())
     {
-        i_root.GetInfo().m_triangles.swap(right_triangles);
+        i_root.GetInfo().m_triangles.swap(i_triangles);
         return;
     }
     if (left_triangles.size() == i_triangles.size() || right_triangles.size() == i_triangles.size())
